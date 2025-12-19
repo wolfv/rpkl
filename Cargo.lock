@@ -327,7 +327,7 @@ dependencies = [
 
 [[package]]
 name = "rpkl"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "clap",
  "rpkl-parser",
@@ -341,7 +341,7 @@ dependencies = [
 
 [[package]]
 name = "rpkl-parser"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "pest",
  "pest_derive",
@@ -351,7 +351,7 @@ dependencies = [
 
 [[package]]
 name = "rpkl-runtime"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "indexmap",
  "insta",
@@ -365,7 +365,7 @@ dependencies = [
 
 [[package]]
 name = "rpkl-stdlib"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "indexmap",
  "once_cell",
