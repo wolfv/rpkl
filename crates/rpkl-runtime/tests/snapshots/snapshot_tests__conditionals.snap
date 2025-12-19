@@ -1,0 +1,9 @@
+---
+source: crates/pkl-runtime/tests/snapshot_tests.rs
+expression: eval_pkl(source)
+---
+{
+  "if_true": "yes",
+  "if_false": "no",
+  "if_expr": "less"
+}

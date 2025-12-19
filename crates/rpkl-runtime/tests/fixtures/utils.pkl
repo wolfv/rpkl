@@ -1,0 +1,8 @@
+// Utility module for testing imports
+
+defaultHost = "localhost"
+defaultPort = 8080
+
+fullUrl = "http://\(defaultHost):\(defaultPort)"
+
+version = "1.0.0"

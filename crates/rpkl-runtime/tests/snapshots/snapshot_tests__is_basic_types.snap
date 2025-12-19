@@ -1,0 +1,14 @@
+---
+source: crates/pkl-runtime/tests/snapshot_tests.rs
+expression: eval_pkl(source)
+---
+{
+  "int_is_int": true,
+  "int_is_string": false,
+  "string_is_string": true,
+  "bool_is_bool": true,
+  "null_is_null": true,
+  "float_is_float": true,
+  "float_is_number": true,
+  "int_is_number": true
+}

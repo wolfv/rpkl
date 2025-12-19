@@ -1,0 +1,20 @@
+---
+source: crates/pkl-runtime/tests/snapshot_tests.rs
+expression: eval_pkl_result(source)
+---
+{
+  "rows": [
+    1,
+    2
+  ],
+  "cols": [
+    10,
+    20
+  ],
+  "matrix": [
+    11,
+    21,
+    12,
+    22
+  ]
+}

@@ -1,0 +1,11 @@
+---
+source: crates/pkl-runtime/tests/snapshot_tests.rs
+expression: eval_pkl(source)
+---
+{
+  "f": 3.7,
+  "ceil_val": 4.0,
+  "floor_val": 3.0,
+  "round_val": 4.0,
+  "sqrt_val": 4.0
+}

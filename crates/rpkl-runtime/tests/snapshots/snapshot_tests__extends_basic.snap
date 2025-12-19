@@ -1,0 +1,16 @@
+---
+source: crates/pkl-runtime/tests/snapshot_tests.rs
+expression: eval_pkl_file(&path)
+---
+{
+  "name": "base",
+  "version": "1.0.0",
+  "port": 8080,
+  "debug": false,
+  "database": {
+    "host": "localhost",
+    "port": 5432
+  },
+  "host": "server.example.com",
+  "maxWorkers": 4
+}

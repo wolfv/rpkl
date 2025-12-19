@@ -1,0 +1,12 @@
+---
+source: crates/pkl-runtime/tests/snapshot_tests.rs
+expression: eval_pkl(source)
+---
+{
+  "and_tt": true,
+  "and_tf": false,
+  "or_tf": true,
+  "or_ff": false,
+  "not_t": false,
+  "not_f": true
+}

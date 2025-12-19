@@ -1,0 +1,11 @@
+---
+source: crates/pkl-runtime/tests/snapshot_tests.rs
+expression: eval_pkl(source)
+---
+{
+  "ns": "100ns",
+  "ms": "500ms",
+  "s": "30s",
+  "min": "5min",
+  "h": "2h"
+}

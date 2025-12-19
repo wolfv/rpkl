@@ -1,0 +1,10 @@
+---
+source: crates/pkl-runtime/tests/snapshot_tests.rs
+expression: eval_pkl(source)
+---
+{
+  "add": 4.0,
+  "mul": 10.0,
+  "div": 2.5,
+  "mixed": 3.5
+}

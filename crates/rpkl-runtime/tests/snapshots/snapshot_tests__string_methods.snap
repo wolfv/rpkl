@@ -1,0 +1,13 @@
+---
+source: crates/pkl-runtime/tests/snapshot_tests.rs
+expression: eval_pkl(source)
+---
+{
+  "str": "Hello, World!",
+  "len": 13,
+  "upper": "HELLO, WORLD!",
+  "lower": "hello, world!",
+  "contains": true,
+  "starts": true,
+  "ends": true
+}

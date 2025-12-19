@@ -1,0 +1,14 @@
+---
+source: crates/pkl-runtime/tests/snapshot_tests.rs
+expression: eval_pkl_file(&path)
+---
+{
+  "name": "dev",
+  "version": "1.0.0",
+  "port": 8080,
+  "debug": true,
+  "database": {
+    "host": "dev-db.local",
+    "port": 5432
+  }
+}

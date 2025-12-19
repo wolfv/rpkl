@@ -1,0 +1,8 @@
+---
+source: crates/pkl-runtime/tests/snapshot_tests.rs
+expression: eval_pkl(source)
+---
+{
+  "value": 42,
+  "result": "it's an int"
+}

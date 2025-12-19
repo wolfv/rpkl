@@ -1,0 +1,15 @@
+---
+source: crates/pkl-runtime/tests/snapshot_tests.rs
+expression: eval_pkl_file(&path)
+---
+{
+  "u": {
+    "defaultHost": "localhost",
+    "defaultPort": 8080,
+    "fullUrl": "http://localhost:8080",
+    "version": "1.0.0"
+  },
+  "appName": "AliasedApp",
+  "appHost": "localhost",
+  "appPort": 8080
+}

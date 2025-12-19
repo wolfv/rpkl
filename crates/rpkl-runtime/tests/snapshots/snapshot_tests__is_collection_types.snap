@@ -1,0 +1,18 @@
+---
+source: crates/pkl-runtime/tests/snapshot_tests.rs
+expression: eval_pkl(source)
+---
+{
+  "items": [
+    1,
+    2,
+    3
+  ],
+  "list": [
+    1,
+    2,
+    3
+  ],
+  "list_is_list": true,
+  "list_is_collection": false
+}

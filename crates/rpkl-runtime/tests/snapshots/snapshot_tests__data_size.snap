@@ -1,0 +1,11 @@
+---
+source: crates/pkl-runtime/tests/snapshot_tests.rs
+expression: eval_pkl(source)
+---
+{
+  "bytes": "1024b",
+  "kb": "10kb",
+  "mb": "256mb",
+  "gb": "1gb",
+  "mib": "512mib"
+}

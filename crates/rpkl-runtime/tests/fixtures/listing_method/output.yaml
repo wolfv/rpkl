@@ -1,0 +1,10 @@
+t:
+  items:
+    - a
+    - b
+    - c
+listed:
+  - a
+  - b
+  - c
+joined: "item-a, item-b, item-c"

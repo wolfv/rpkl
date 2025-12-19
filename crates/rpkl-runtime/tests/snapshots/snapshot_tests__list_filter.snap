@@ -1,0 +1,17 @@
+---
+source: crates/pkl-runtime/tests/snapshot_tests.rs
+expression: eval_pkl(source)
+---
+{
+  "numbers": [
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
+  "evens": [
+    2,
+    4
+  ]
+}

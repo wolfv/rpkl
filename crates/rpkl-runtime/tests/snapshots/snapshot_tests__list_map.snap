@@ -1,0 +1,16 @@
+---
+source: crates/pkl-runtime/tests/snapshot_tests.rs
+expression: eval_pkl_result(source)
+---
+{
+  "numbers": [
+    1,
+    2,
+    3
+  ],
+  "doubled": [
+    2,
+    4,
+    6
+  ]
+}

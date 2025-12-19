@@ -1,0 +1,39 @@
+---
+source: crates/pkl-runtime/tests/snapshot_tests.rs
+expression: eval_pkl(source)
+---
+{
+  "items": [
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
+  "list": [
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
+  "taken": [
+    1,
+    2,
+    3
+  ],
+  "dropped": [
+    3,
+    4,
+    5
+  ],
+  "take_last": [
+    4,
+    5
+  ],
+  "drop_last": [
+    1,
+    2,
+    3
+  ]
+}

@@ -1,0 +1,14 @@
+// Test Listing methods: toList, map, join
+
+class Test {
+  items: Listing<String>?
+}
+
+// Test basic listing access from typed property
+t = new Test { items { "a"; "b"; "c" } }
+
+// Test toList()
+listed = t.items.toList()
+
+// Test map + join on converted List
+joined = t.items.toList().map((x) -> "item-\(x)").join(", ")

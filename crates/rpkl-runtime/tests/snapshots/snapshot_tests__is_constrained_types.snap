@@ -1,0 +1,14 @@
+---
+source: crates/pkl-runtime/tests/snapshot_tests.rs
+expression: eval_pkl(source)
+---
+{
+  "positive_num": 42,
+  "negative_num": -10,
+  "zero": 0,
+  "positive_is_positive_int": true,
+  "negative_is_positive_int": false,
+  "zero_is_positive_int": false,
+  "positive_is_non_negative": true,
+  "zero_is_non_negative": true
+}

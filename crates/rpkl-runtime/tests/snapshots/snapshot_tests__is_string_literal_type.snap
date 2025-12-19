@@ -1,0 +1,11 @@
+---
+source: crates/pkl-runtime/tests/snapshot_tests.rs
+expression: eval_pkl(source)
+---
+{
+  "format_json": "json",
+  "format_yaml": "yaml",
+  "json_is_json": true,
+  "yaml_is_json": false,
+  "json_is_yaml": false
+}

@@ -1,0 +1,14 @@
+---
+source: crates/pkl-runtime/tests/snapshot_tests.rs
+expression: eval_pkl(source)
+---
+{
+  "rect": {
+    "width": 10,
+    "height": 5,
+    "area": "<function>",
+    "perimeter": "<function>"
+  },
+  "rectArea": 50,
+  "rectPerimeter": 30
+}

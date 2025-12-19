@@ -1,0 +1,25 @@
+---
+source: crates/pkl-runtime/tests/snapshot_tests.rs
+expression: eval_pkl(source)
+---
+{
+  "int_list": [
+    1,
+    2,
+    3
+  ],
+  "string_list": [
+    "a",
+    "b",
+    "c"
+  ],
+  "mixed_list": [
+    1,
+    "two",
+    3
+  ],
+  "int_list_is_list": true,
+  "int_list_is_list_int": true,
+  "int_list_is_list_string": false,
+  "string_list_is_list_string": true
+}

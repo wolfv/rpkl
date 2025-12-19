@@ -1,0 +1,16 @@
+---
+source: crates/pkl-runtime/tests/snapshot_tests.rs
+expression: eval_pkl_file(&path)
+---
+{
+  "utils": {
+    "defaultHost": "localhost",
+    "defaultPort": 8080,
+    "fullUrl": "http://localhost:8080",
+    "version": "1.0.0"
+  },
+  "name": "MyApp",
+  "host": "localhost",
+  "port": 8080,
+  "url": "http://localhost:8080"
+}

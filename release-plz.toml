@@ -1,0 +1,20 @@
+[workspace]
+# Publish crates in dependency order
+changelog_update = true
+git_release_enable = true
+
+[[package]]
+name = "rpkl-parser"
+changelog_include = ["rpkl-parser"]
+
+[[package]]
+name = "rpkl-runtime"
+changelog_include = ["rpkl-runtime"]
+
+[[package]]
+name = "rpkl-stdlib"
+changelog_include = ["rpkl-stdlib"]
+
+[[package]]
+name = "rpkl"
+changelog_include = ["rpkl"]

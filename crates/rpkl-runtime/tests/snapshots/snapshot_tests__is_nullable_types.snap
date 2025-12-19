@@ -1,0 +1,10 @@
+---
+source: crates/pkl-runtime/tests/snapshot_tests.rs
+expression: eval_pkl(source)
+---
+{
+  "null_is_nullable_string": true,
+  "string_is_nullable_string": true,
+  "int_is_nullable_int": true,
+  "null_is_nullable_int": true
+}

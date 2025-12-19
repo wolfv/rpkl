@@ -1,0 +1,12 @@
+---
+source: crates/pkl-runtime/tests/snapshot_tests.rs
+expression: eval_pkl(source)
+---
+{
+  "debug": true,
+  "config": {
+    "name": "app",
+    "logLevel": "debug",
+    "verbose": true
+  }
+}

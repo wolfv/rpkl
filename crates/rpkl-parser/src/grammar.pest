@@ -1,0 +1,394 @@
+// PKL Grammar for pest parser
+// Based on PKL language specification
+
+// =============================================================================
+// Whitespace and Comments
+// =============================================================================
+
+WHITESPACE = _{ " " | "\t" | "\r" | "\n" }
+COMMENT = _{ line_comment | block_comment }
+line_comment = { "//" ~ (!NEWLINE ~ ANY)* }
+block_comment = { "/*" ~ (!"*/" ~ ANY)* ~ "*/" }
+
+// =============================================================================
+// Keywords
+// =============================================================================
+
+// Reserved keywords - must not be used as identifiers
+keyword = @{
+    ( "module" | "import" | "amends" | "extends" | "class" | "function"
+    | "if" | "else" | "let" | "for" | "when" | "in" | "is" | "as"
+    | "new" | "this" | "super" | "outer" | "null" | "true" | "false"
+    | "abstract" | "open" | "local" | "hidden" | "fixed" | "const" | "external"
+    | "typealias" | "throw" | "read" | "trace" | "nothing" | "unknown" )
+    ~ !ident_char
+}
+
+// =============================================================================
+// Identifiers
+// =============================================================================
+
+ident_start = _{ ASCII_ALPHA | "_" }
+ident_char = _{ ASCII_ALPHANUMERIC | "_" }
+// Backtick identifiers allow using reserved words as identifiers
+backtick_identifier = @{ "`" ~ (ident_start ~ ident_char*) ~ "`" }
+normal_identifier = @{ !keyword ~ ident_start ~ ident_char* }
+identifier = @{ backtick_identifier | normal_identifier }
+qualified_identifier = { identifier ~ ("." ~ identifier)* }
+
+// =============================================================================
+// Literals
+// =============================================================================
+
+// Null literal - must be word boundary (not followed by ident_char)
+null_literal = @{ "null" ~ !ident_char }
+
+// Boolean literals - must be word boundary
+bool_literal = @{ ("true" | "false") ~ !ident_char }
+
+// Integer literals
+int_literal = @{
+    hex_int | bin_int | oct_int | dec_int
+}
+dec_int = @{ ("0" | ASCII_NONZERO_DIGIT ~ ASCII_DIGIT*) }
+hex_int = @{ "0" ~ ("x" | "X") ~ ASCII_HEX_DIGIT+ }
+bin_int = @{ "0" ~ ("b" | "B") ~ ("0" | "1")+ }
+oct_int = @{ "0" ~ ("o" | "O") ~ ('0'..'7')+ }
+
+// Float literals
+float_literal = @{
+    ASCII_DIGIT+ ~ "." ~ ASCII_DIGIT+ ~ exponent?
+    | ASCII_DIGIT+ ~ exponent
+}
+exponent = @{ ("e" | "E") ~ ("+" | "-")? ~ ASCII_DIGIT+ }
+
+// String literals
+string_literal = { multiline_string | basic_string }
+
+basic_string = ${ "\"" ~ basic_string_inner ~ "\"" }
+basic_string_inner = { basic_string_part* }
+basic_string_part = {
+    interpolation
+    | escape_sequence
+    | basic_string_char+
+}
+basic_string_char = { !("\"" | "\\" | NEWLINE) ~ ANY }
+
+multiline_string = ${ "\"\"\"" ~ multiline_string_inner ~ "\"\"\"" }
+multiline_string_inner = { multiline_string_part* }
+multiline_string_part = {
+    interpolation
+    | escape_sequence
+    | multiline_string_char+
+}
+multiline_string_char = { !("\"\"\"" | "\\") ~ ANY }
+
+// String interpolation
+interpolation = { "\\(" ~ expression ~ ")" }
+
+// Escape sequences
+escape_sequence = @{
+    "\\" ~ ("n" | "r" | "t" | "\\" | "\"" | "(" | "0"
+          | "u" ~ "{" ~ ASCII_HEX_DIGIT{1,6} ~ "}")
+}
+
+// =============================================================================
+// Types
+// =============================================================================
+
+type_annotation = { type_union }
+
+type_union = { type_nullable ~ ("|" ~ type_nullable)* }
+
+type_nullable = { type_primary ~ "?"? }
+
+type_primary = {
+    function_type
+    | constrained_type
+    | parameterized_type
+    | string_literal_type
+    | nothing_type
+    | unknown_type
+    | module_type
+    | type_reference
+    | "(" ~ type_annotation ~ ")"
+}
+
+type_reference = { qualified_identifier }
+
+parameterized_type = { qualified_identifier ~ type_args }
+type_args = { "<" ~ type_annotation ~ ("," ~ type_annotation)* ~ ">" }
+
+constrained_type = { type_reference ~ "(" ~ expression ~ ")" }
+
+function_type = {
+    "(" ~ (type_annotation ~ ("," ~ type_annotation)*)? ~ ")"
+    ~ "->" ~ type_annotation
+}
+
+string_literal_type = { basic_string }
+nothing_type = { "nothing" }
+unknown_type = { "unknown" }
+module_type = { "module" }
+
+// Type parameters for class definitions
+type_parameters = { "<" ~ type_parameter ~ ("," ~ type_parameter)* ~ ">" }
+type_parameter = { variance? ~ identifier }
+variance = { "in" | "out" }
+
+// =============================================================================
+// Module Structure
+// =============================================================================
+
+// Entry point
+module = { SOI ~ module_header? ~ import_clause* ~ module_member* ~ EOI }
+
+// Module header
+module_header = { annotation* ~ module_clause }
+module_clause = {
+    amends_clause
+    | extends_clause
+    | module_decl
+}
+module_decl = { module_modifier* ~ "module" ~ qualified_identifier? }
+amends_clause = { "amends" ~ string_literal }
+extends_clause = { "extends" ~ string_literal }
+
+module_modifier = { "open" }
+
+// Annotations
+annotation = { "@" ~ qualified_identifier ~ object_body? }
+
+// Import clauses
+import_clause = {
+    glob_import
+    | normal_import
+}
+normal_import = { "import" ~ string_literal ~ import_alias? }
+glob_import = { "import*" ~ string_literal ~ import_alias? }
+import_alias = { "as" ~ identifier }
+
+// Module members
+module_member = {
+    class_definition
+    | type_alias_definition
+    | annotated_property
+    | annotated_method
+}
+
+// =============================================================================
+// Class Definitions
+// =============================================================================
+
+class_definition = {
+    annotation* ~ class_modifier* ~ "class" ~ identifier ~
+    type_parameters? ~ extends_clause_class? ~ class_body
+}
+
+class_modifier = { "abstract" | "open" | "local" | "external" }
+
+extends_clause_class = { "extends" ~ type_reference }
+
+class_body = { "{" ~ class_member* ~ "}" }
+
+class_member = {
+    annotated_property
+    | annotated_method
+}
+
+// =============================================================================
+// Properties and Methods
+// =============================================================================
+
+annotated_property = { annotation* ~ property }
+property = {
+    property_modifier* ~ identifier ~ type_annotation_clause? ~ property_value?
+}
+property_modifier = { "local" | "hidden" | "fixed" | "const" | "external" }
+type_annotation_clause = { ":" ~ type_annotation }
+property_value = { "=" ~ expression | object_body }
+
+annotated_method = { annotation* ~ method }
+method = {
+    property_modifier* ~ "function" ~ identifier ~
+    function_parameters ~ type_annotation_clause? ~ method_body?
+}
+function_parameters = { "(" ~ parameter_list? ~ ")" }
+parameter_list = { parameter ~ ("," ~ parameter)* }
+parameter = { identifier ~ type_annotation_clause? }
+method_body = { "=" ~ expression }
+
+// =============================================================================
+// Type Alias
+// =============================================================================
+
+type_alias_definition = {
+    annotation* ~ type_alias_modifier* ~ "typealias" ~ identifier ~
+    type_parameters? ~ "=" ~ type_annotation
+}
+type_alias_modifier = { "local" | "external" }
+
+// =============================================================================
+// Object Literals
+// =============================================================================
+
+// Object members separated by optional semicolons or newlines
+// The ";"? after each member allows trailing semicolons
+object_body = { "{" ~ (object_member ~ ";"?)* ~ "}" }
+
+object_member = {
+    for_generator
+    | when_generator
+    | spread_member
+    | entry_member
+    | property_member
+    | element_member
+}
+
+// property = value
+property_member = {
+    identifier ~ ("=" ~ expression | object_body)
+}
+
+// [key] = value
+entry_member = { "[" ~ expression ~ "]" ~ ("=" ~ expression | object_body) }
+
+// bare expression (element)
+element_member = { expression }
+
+// ...expr or ...?expr
+spread_member = { "..." ~ "?"? ~ expression }
+
+// for generator
+for_generator = {
+    "for" ~ "(" ~ for_binding ~ "in" ~ expression ~ ")" ~ object_body
+}
+for_binding = { identifier ~ ("," ~ identifier)? }
+
+// when generator
+when_generator = {
+    "when" ~ "(" ~ expression ~ ")" ~ object_body ~ else_clause?
+}
+else_clause = { "else" ~ object_body }
+
+// =============================================================================
+// Expressions
+// =============================================================================
+
+// Standalone expression (for parsing single expressions with full input consumption)
+standalone_expression = { SOI ~ expression ~ EOI }
+
+// Expression entry point - handles operator precedence via precedence climbing
+expression = { prefix_expr ~ (binary_op ~ prefix_expr)* }
+
+// Binary operators - order matters for token matching (longer/more specific first)
+// Note: is/as are NOT binary operators - they are handled as postfix suffixes with type annotations
+binary_op = _{
+    null_coalesce_op
+    | pipe_op
+    | logical_or_op
+    | logical_and_op
+    | equality_op
+    | comparison_op
+    | additive_op
+    | power_op           // Must come before multiplicative_op to match ** before *
+    | multiplicative_op
+}
+
+null_coalesce_op = { "??" }
+pipe_op = { "|>" }
+logical_or_op = { "||" }
+logical_and_op = { "&&" }
+equality_op = { "==" | "!=" }
+comparison_op = { "<=" | ">=" | "<" | ">" }
+additive_op = { "+" | "-" }
+multiplicative_op = { "*" | "/" | "~/" | "%" }
+power_op = { "**" }
+
+// Prefix expressions
+prefix_expr = { prefix_op* ~ postfix_expr }
+prefix_op = { "!" | "-" }
+
+// Postfix expressions
+postfix_expr = { primary_expr ~ postfix_suffix* }
+postfix_suffix = {
+    is_suffix
+    | as_suffix
+    | method_call_suffix
+    | optional_member_access_suffix
+    | member_access_suffix
+    | subscript_suffix
+    | non_null_suffix
+    | call_suffix
+    | amend_suffix
+}
+
+// Type check/cast suffixes
+// The keyword part must be atomic to ensure proper keyword boundary detection
+is_keyword = @{ "is" ~ !ident_char }
+as_keyword = @{ "as" ~ !ident_char }
+is_suffix = { is_keyword ~ type_annotation }
+as_suffix = { as_keyword ~ type_annotation }
+
+member_access_suffix = { "." ~ identifier }
+optional_member_access_suffix = { "?." ~ identifier }
+method_call_suffix = { "." ~ identifier ~ call_args }
+// Note: negative lookahead prevents subscript from matching entry_member syntax
+subscript_suffix = { "[" ~ expression ~ "]" ~ !("=" | "{") }
+non_null_suffix = { "!!" }
+call_suffix = { call_args }
+amend_suffix = { object_body }
+
+call_args = { "(" ~ arg_list? ~ ")" }
+arg_list = { expression ~ ("," ~ expression)* }
+
+// Primary expressions
+primary_expr = {
+    if_expr
+    | let_expr
+    | throw_expr
+    | trace_expr
+    | read_expr
+    | read_glob_expr
+    | new_expr
+    | lambda_expr
+    | parenthesized_or_amended
+    | this_expr
+    | super_expr
+    | outer_expr
+    | module_expr
+    | null_literal
+    | bool_literal
+    | float_literal
+    | int_literal
+    | string_literal
+    | identifier
+}
+
+// Control flow expressions
+if_expr = { "if" ~ "(" ~ expression ~ ")" ~ expression ~ "else" ~ expression }
+let_expr = { "let" ~ "(" ~ identifier ~ type_annotation_clause? ~ "=" ~ expression ~ ")" ~ expression }
+
+// Special expressions
+throw_expr = { "throw" ~ "(" ~ expression ~ ")" }
+trace_expr = { "trace" ~ "(" ~ expression ~ ")" }
+read_expr = { ("read?" | "read") ~ "(" ~ expression ~ ")" }
+read_glob_expr = { "read*" ~ "(" ~ expression ~ ")" }
+
+// Object creation
+new_expr = { "new" ~ type_reference? ~ object_body }
+
+// Lambda expression
+lambda_expr = { lambda_params ~ "->" ~ expression }
+lambda_params = { "(" ~ lambda_param_list? ~ ")" }
+lambda_param_list = { lambda_param ~ ("," ~ lambda_param)* }
+lambda_param = { identifier ~ type_annotation_clause? }
+
+// Parenthesized expression (may be followed by amendment)
+parenthesized_or_amended = { "(" ~ expression ~ ")" ~ object_body? }
+
+// Keywords as expressions
+this_expr = { "this" }
+super_expr = { "super" }
+outer_expr = { "outer" }
+module_expr = { "module" }

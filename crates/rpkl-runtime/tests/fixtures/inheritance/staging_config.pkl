@@ -1,0 +1,10 @@
+amends "dev_config.pkl"
+
+// Staging amends dev (which amends base)
+// This creates a chain: staging -> dev -> base
+name = "staging"
+
+// Override database host only, keep debug from dev and port from base
+database {
+    host = "staging-db.local"
+}

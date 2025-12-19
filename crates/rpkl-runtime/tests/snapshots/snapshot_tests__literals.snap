@@ -1,0 +1,12 @@
+---
+source: crates/pkl-runtime/tests/snapshot_tests.rs
+expression: eval_pkl(source)
+---
+{
+  "null_val": null,
+  "bool_true": true,
+  "bool_false": false,
+  "int_val": 42,
+  "float_val": 3.14,
+  "string_val": "hello"
+}

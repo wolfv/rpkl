@@ -1,0 +1,10 @@
+---
+source: crates/pkl-runtime/tests/snapshot_tests.rs
+expression: eval_pkl(source)
+---
+{
+  "int_val": 42,
+  "float_val": 3.14,
+  "int_as_number": 42,
+  "float_as_number": 3.14
+}

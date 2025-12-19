@@ -1,0 +1,6 @@
+extends "base_config.pkl"
+
+// Server-specific configuration that extends base
+// Uses extends instead of amends
+host = "server.example.com"
+maxWorkers = 4

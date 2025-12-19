@@ -1,0 +1,10 @@
+amends "base_config.pkl"
+
+// Override for development
+name = "dev"
+debug = true
+
+// Override database settings
+database {
+    host = "dev-db.local"
+}

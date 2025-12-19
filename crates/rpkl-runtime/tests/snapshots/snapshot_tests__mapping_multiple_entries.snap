@@ -1,0 +1,11 @@
+---
+source: crates/pkl-runtime/tests/snapshot_tests.rs
+expression: eval_pkl(source)
+---
+{
+  "config": {
+    "key1": "value1",
+    "key2": "value2",
+    "key3": 42
+  }
+}

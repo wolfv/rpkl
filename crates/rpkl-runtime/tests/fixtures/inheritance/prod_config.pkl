@@ -1,0 +1,11 @@
+amends "base_config.pkl"
+
+// Override for production
+name = "production"
+port = 443
+
+// Override database settings with additional properties
+database {
+    host = "prod-db.cluster.amazonaws.com"
+    maxConnections = 100
+}

@@ -1,0 +1,14 @@
+---
+source: crates/pkl-runtime/tests/snapshot_tests.rs
+expression: eval_pkl(source)
+---
+{
+  "person1": {
+    "name": "Alice",
+    "age": 30
+  },
+  "person2": {
+    "name": "Bob",
+    "age": 0
+  }
+}

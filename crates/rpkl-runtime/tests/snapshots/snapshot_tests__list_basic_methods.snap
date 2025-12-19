@@ -1,0 +1,25 @@
+---
+source: crates/pkl-runtime/tests/snapshot_tests.rs
+expression: eval_pkl(source)
+---
+{
+  "items": [
+    "a",
+    "b",
+    "c"
+  ],
+  "list": [
+    "a",
+    "b",
+    "c"
+  ],
+  "len": 3,
+  "first_item": "a",
+  "last_item": "c",
+  "reversed": [
+    "c",
+    "b",
+    "a"
+  ],
+  "joined": "a, b, c"
+}

@@ -1,0 +1,8 @@
+---
+source: crates/pkl-runtime/tests/snapshot_tests.rs
+expression: eval_pkl(source)
+---
+{
+  "fn": "<function>",
+  "fn_is_function": true
+}

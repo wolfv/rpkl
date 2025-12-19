@@ -1,0 +1,10 @@
+---
+source: crates/pkl-runtime/tests/snapshot_tests.rs
+expression: eval_pkl(source)
+---
+{
+  "int_val": 42,
+  "null_val": null,
+  "int_as_nullable_int": 42,
+  "null_as_nullable_int": null
+}

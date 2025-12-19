@@ -1,0 +1,6 @@
+// Module using aliased import
+import "utils.pkl" as u
+
+appName = "AliasedApp"
+appHost = u.defaultHost
+appPort = u.defaultPort

@@ -1,0 +1,10 @@
+---
+source: crates/pkl-runtime/tests/snapshot_tests.rs
+expression: eval_pkl(source)
+---
+{
+  "int_is_any": true,
+  "string_is_any": true,
+  "null_is_any": true,
+  "list_is_any": true
+}

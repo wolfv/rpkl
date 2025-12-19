@@ -1,0 +1,11 @@
+---
+source: crates/pkl-runtime/tests/snapshot_tests.rs
+expression: eval_pkl(source)
+---
+{
+  "width": 10,
+  "height": 20,
+  "area": 200,
+  "perimeter": 60,
+  "description": "Rectangle: 10x20, area=200"
+}

@@ -1,0 +1,16 @@
+---
+source: crates/pkl-runtime/tests/snapshot_tests.rs
+expression: eval_pkl(source)
+---
+{
+  "items": [
+    "a",
+    "b",
+    "c"
+  ],
+  "indexed": {
+    "0": "a",
+    "1": "b",
+    "2": "c"
+  }
+}

@@ -1,0 +1,9 @@
+---
+source: crates/pkl-runtime/tests/snapshot_tests.rs
+expression: eval_pkl(source)
+---
+{
+  "int_is_int_or_string": true,
+  "string_is_int_or_string": true,
+  "bool_is_int_or_string": false
+}

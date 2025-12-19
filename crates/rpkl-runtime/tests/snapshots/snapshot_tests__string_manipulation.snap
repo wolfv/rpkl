@@ -1,0 +1,19 @@
+---
+source: crates/pkl-runtime/tests/snapshot_tests.rs
+expression: eval_pkl(source)
+---
+{
+  "original": "  hello world  ",
+  "trimmed": "hello world",
+  "replaced": "heLLo",
+  "split_result": [
+    "a",
+    "b",
+    "c"
+  ],
+  "chars": [
+    "a",
+    "b",
+    "c"
+  ]
+}

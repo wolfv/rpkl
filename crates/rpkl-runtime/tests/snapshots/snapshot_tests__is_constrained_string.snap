@@ -1,0 +1,10 @@
+---
+source: crates/pkl-runtime/tests/snapshot_tests.rs
+expression: eval_pkl(source)
+---
+{
+  "short_str": "hi",
+  "long_str": "hello world",
+  "short_is_long": false,
+  "long_is_long": true
+}

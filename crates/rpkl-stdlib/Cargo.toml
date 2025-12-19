@@ -1,0 +1,14 @@
+[package]
+name = "rpkl-stdlib"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Standard library implementations for PKL"
+
+[dependencies]
+rpkl-parser = { workspace = true }
+rpkl-runtime = { workspace = true }
+thiserror = { workspace = true }
+once_cell = { workspace = true }
+indexmap = { workspace = true }

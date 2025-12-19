@@ -1,0 +1,7 @@
+// Configuration module that imports utils
+import "utils.pkl"
+
+name = "MyApp"
+host = utils.defaultHost
+port = utils.defaultPort
+url = utils.fullUrl

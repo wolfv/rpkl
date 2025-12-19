@@ -1,0 +1,12 @@
+---
+source: crates/pkl-runtime/tests/snapshot_tests.rs
+expression: eval_pkl(source)
+---
+{
+  "eq": true,
+  "ne": true,
+  "lt": true,
+  "le": true,
+  "gt": true,
+  "ge": true
+}

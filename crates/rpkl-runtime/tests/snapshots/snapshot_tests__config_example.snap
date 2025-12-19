@@ -1,0 +1,23 @@
+---
+source: crates/pkl-runtime/tests/snapshot_tests.rs
+expression: eval_pkl(source)
+---
+{
+  "name": "My Application",
+  "version": "1.0.0",
+  "port": 8080,
+  "debug": true,
+  "database": {
+    "host": "localhost",
+    "port": 5432,
+    "name": "myapp"
+  },
+  "servers": [
+    "server1.example.com",
+    "server2.example.com"
+  ],
+  "settings": {
+    "maxConnections": 100,
+    "timeout": "30s"
+  }
+}

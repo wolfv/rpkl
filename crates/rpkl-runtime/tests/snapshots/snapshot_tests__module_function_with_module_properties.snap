@@ -1,0 +1,9 @@
+---
+source: crates/pkl-runtime/tests/snapshot_tests.rs
+expression: eval_pkl(source)
+---
+{
+  "multiplier": 3,
+  "scale": "<function>",
+  "scaled": 21
+}

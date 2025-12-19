@@ -1,0 +1,10 @@
+---
+source: crates/pkl-runtime/tests/snapshot_tests.rs
+expression: eval_pkl(source)
+---
+{
+  "absVal": 42,
+  "signVal": -1,
+  "evenCheck": true,
+  "oddCheck": true
+}

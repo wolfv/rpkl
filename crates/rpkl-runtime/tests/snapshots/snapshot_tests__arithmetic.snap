@@ -1,0 +1,15 @@
+---
+source: crates/pkl-runtime/tests/snapshot_tests.rs
+expression: eval_pkl(source)
+---
+{
+  "add": 3,
+  "sub": 7,
+  "mul": 20,
+  "div": 5.0,
+  "int_div": 3,
+  "mod": 2,
+  "pow": 1024,
+  "precedence": 7,
+  "parens": 9
+}

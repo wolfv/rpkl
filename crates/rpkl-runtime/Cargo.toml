@@ -1,0 +1,19 @@
+[package]
+name = "rpkl-runtime"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Runtime and evaluator for the PKL configuration language"
+
+[dependencies]
+rpkl-parser = { workspace = true }
+indexmap = { workspace = true }
+thiserror = { workspace = true }
+once_cell = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+[dev-dependencies]
+insta = { workspace = true }
+rpkl-stdlib = { workspace = true }

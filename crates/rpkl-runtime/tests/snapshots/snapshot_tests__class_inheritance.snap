@@ -1,0 +1,15 @@
+---
+source: crates/pkl-runtime/tests/snapshot_tests.rs
+expression: eval_pkl(source)
+---
+{
+  "animal": {
+    "name": "Generic",
+    "sound": "..."
+  },
+  "dog": {
+    "name": "Rex",
+    "sound": "woof",
+    "breed": "German Shepherd"
+  }
+}

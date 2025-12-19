@@ -1,0 +1,10 @@
+---
+source: crates/pkl-runtime/tests/snapshot_tests.rs
+expression: eval_pkl(source)
+---
+{
+  "double": "<function>",
+  "add": "<function>",
+  "result1": 42,
+  "result2": 15
+}

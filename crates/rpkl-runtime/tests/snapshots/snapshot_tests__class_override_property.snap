@@ -1,0 +1,16 @@
+---
+source: crates/pkl-runtime/tests/snapshot_tests.rs
+expression: eval_pkl(source)
+---
+{
+  "devConfig": {
+    "host": "localhost",
+    "port": 8080,
+    "debug": true
+  },
+  "prodConfig": {
+    "host": "prod.example.com",
+    "port": 443,
+    "debug": false
+  }
+}
