@@ -5,6 +5,7 @@ edition.workspace = true
 license.workspace = true
 repository.workspace = true
 description = "CLI for the PKL configuration language"
+publish = false
 
 [[bin]]
 name = "rpkl"
