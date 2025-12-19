@@ -1,9 +1,12 @@
 //! PKL CLI - Command line interface for PKL
 //!
-//! Usage:
-//!   rpkl eval <file>              Evaluate a PKL file and output as JSON
-//!   rpkl eval <file> -f yaml      Evaluate and output as YAML
-//!   rpkl eval <file> -f json      Evaluate and output as JSON (default)
+//! # Usage
+//!
+//! ```text
+//! rpkl eval <file>              Evaluate a PKL file and output as JSON
+//! rpkl eval <file> -f yaml      Evaluate and output as YAML
+//! rpkl eval <file> -f json      Evaluate and output as JSON (default)
+//! ```
 
 use std::fs;
 use std::path::PathBuf;
