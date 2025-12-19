@@ -14,7 +14,3 @@ changelog_include = ["rpkl-runtime"]
 [[package]]
 name = "rpkl-stdlib"
 changelog_include = ["rpkl-stdlib"]
-
-[[package]]
-name = "rpkl"
-changelog_include = ["rpkl"]
