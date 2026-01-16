@@ -539,11 +539,10 @@ fn encode_tokens(raw_tokens: &[RawToken], doc: &Document) -> Vec<SemanticToken> 
         } else {
             // Multi-line token, just use the first line
             // Get the length of the token text on the first line
-            let line_end = doc.text[token.span.start..]
+            doc.text[token.span.start..]
                 .find('\n')
                 .map(|i| i as u32)
-                .unwrap_or((token.span.end - token.span.start) as u32);
-            line_end
+                .unwrap_or((token.span.end - token.span.start) as u32)
         };
 
         let delta_line = line - prev_line;

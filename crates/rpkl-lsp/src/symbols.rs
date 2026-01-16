@@ -14,6 +14,7 @@ use crate::document::Document;
 
 /// Result of a definition lookup that may point to another file
 #[derive(Debug)]
+#[allow(dead_code)]
 pub enum DefinitionResult {
     /// Definition is in the same file at (start, end) offsets
     SameFile { start: usize, end: usize },
