@@ -1,0 +1,171 @@
+name: Publish VSCode Extension
+
+on:
+  workflow_dispatch:  # Manual trigger from Actions tab
+  push:
+    tags:
+      - 'v*'  # Trigger on version tags
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build-lsp:
+    name: Build LSP (${{ matrix.target }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Linux
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            vscode-target: linux-x64
+          - os: ubuntu-latest
+            target: aarch64-unknown-linux-gnu
+            vscode-target: linux-arm64
+          # macOS
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            vscode-target: darwin-x64
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            vscode-target: darwin-arm64
+          # Windows
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            vscode-target: win32-x64
+          - os: windows-latest
+            target: aarch64-pc-windows-msvc
+            vscode-target: win32-arm64
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Install cross-compilation tools (Linux ARM64)
+        if: matrix.target == 'aarch64-unknown-linux-gnu'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-aarch64-linux-gnu
+
+      - name: Build LSP server
+        run: cargo build --release --target ${{ matrix.target }} -p rpkl-lsp
+        env:
+          CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER: aarch64-linux-gnu-gcc
+
+      - name: Rename binary (Unix)
+        if: runner.os != 'Windows'
+        run: |
+          mkdir -p dist
+          cp target/${{ matrix.target }}/release/rpkl-lsp dist/rpkl-lsp
+
+      - name: Rename binary (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          mkdir dist
+          copy target\${{ matrix.target }}\release\rpkl-lsp.exe dist\rpkl-lsp.exe
+
+      - name: Upload LSP binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: lsp-${{ matrix.vscode-target }}
+          path: dist/
+          if-no-files-found: error
+
+  package-extension:
+    name: Package (${{ matrix.vscode-target }})
+    needs: build-lsp
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        vscode-target:
+          - linux-x64
+          - linux-arm64
+          - darwin-x64
+          - darwin-arm64
+          - win32-x64
+          - win32-arm64
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Download LSP binary
+        uses: actions/download-artifact@v4
+        with:
+          name: lsp-${{ matrix.vscode-target }}
+          path: editors/vscode/server
+
+      - name: Make binary executable
+        run: chmod +x editors/vscode/server/rpkl-lsp || true
+
+      - name: Install dependencies
+        working-directory: editors/vscode
+        run: npm ci
+
+      - name: Package extension
+        working-directory: editors/vscode
+        run: npx vsce package --target ${{ matrix.vscode-target }} -o rpkl-${{ matrix.vscode-target }}.vsix
+
+      - name: Upload VSIX
+        uses: actions/upload-artifact@v4
+        with:
+          name: vsix-${{ matrix.vscode-target }}
+          path: editors/vscode/*.vsix
+          if-no-files-found: error
+
+  # Combine all VSIX files into a single artifact for easy download
+  collect-artifacts:
+    name: Collect All VSIX Files
+    needs: package-extension
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download all VSIX files
+        uses: actions/download-artifact@v4
+        with:
+          pattern: vsix-*
+          path: vsix
+          merge-multiple: true
+
+      - name: List VSIX files
+        run: ls -la vsix/
+
+      - name: Upload combined artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: rpkl-vsix-all-platforms
+          path: vsix/*.vsix
+          retention-days: 90
+
+  # Uncomment when ready to auto-publish
+  # publish:
+  #   name: Publish to Marketplace
+  #   needs: package-extension
+  #   runs-on: ubuntu-latest
+  #   if: github.event_name == 'release' || github.event.inputs.publish == 'true'
+  #
+  #   steps:
+  #     - name: Download all VSIX files
+  #       uses: actions/download-artifact@v4
+  #       with:
+  #         pattern: vsix-*
+  #         path: vsix
+  #         merge-multiple: true
+  #
+  #     - name: Install vsce
+  #       run: npm install -g @vscode/vsce
+  #
+  #     - name: Publish to VSCode Marketplace
+  #       run: vsce publish --packagePath vsix/*.vsix -p ${{ secrets.VSCE_PAT }}
