@@ -55,6 +55,8 @@ pub fn register(registry: &mut ExternalRegistry) {
 
     // Mapping methods (VmObject with Mapping kind)
     registry.register_method("Mapping", "toMap", Arc::new(mapping_to_map));
+    registry.register_method("Mapping", "containsKey", Arc::new(mapping_contains_key));
+    registry.register_method("Mapping", "getOrNull", Arc::new(mapping_get_or_null));
     registry.register_property("Mapping", "length", Arc::new(mapping_length));
     registry.register_property("Mapping", "isEmpty", Arc::new(mapping_is_empty));
 
@@ -818,6 +820,54 @@ fn mapping_is_empty(
 ) -> EvalResult<VmValue> {
     let obj = get_mapping_arg(args, 0)?;
     Ok(VmValue::Boolean(obj.entry_keys().is_empty()))
+}
+
+fn mapping_contains_key(
+    args: &[VmValue],
+    _eval: &rpkl_runtime::Evaluator,
+    _scope: &rpkl_runtime::ScopeRef,
+) -> EvalResult<VmValue> {
+    let obj = get_mapping_arg(args, 0)?;
+    let key = args.get(1).ok_or(EvalError::WrongArgCount {
+        expected: 2,
+        actual: 1,
+    })?;
+
+    // Mapping keys are VmValue, so we need to check if the key matches
+    let key_str = key.as_string().map(|s| VmValue::string(s.to_string()));
+    let keys = obj.entry_keys();
+    let found = if let Some(k) = key_str {
+        keys.iter().any(|entry_key| entry_key == &k)
+    } else {
+        keys.iter().any(|entry_key| entry_key == key)
+    };
+    Ok(VmValue::Boolean(found))
+}
+
+fn mapping_get_or_null(
+    args: &[VmValue],
+    eval: &rpkl_runtime::Evaluator,
+    _scope: &rpkl_runtime::ScopeRef,
+) -> EvalResult<VmValue> {
+    let obj = get_mapping_arg(args, 0)?;
+    let key = args.get(1).ok_or(EvalError::WrongArgCount {
+        expected: 2,
+        actual: 1,
+    })?;
+
+    // Try to find the key - it could be a string
+    let key_to_find = if let Some(s) = key.as_string() {
+        VmValue::string(s.to_string())
+    } else {
+        key.clone()
+    };
+
+    if let Some(member) = obj.get_entry_member(&key_to_find) {
+        let value = member.force(|expr, scope| eval.eval_expr(expr, scope))?;
+        Ok(value)
+    } else {
+        Ok(VmValue::Null)
+    }
 }
 
 fn listing_join(

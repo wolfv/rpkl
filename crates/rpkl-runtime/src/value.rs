@@ -100,7 +100,7 @@ impl DataSizeUnit {
 }
 
 /// The core runtime value type
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub enum VmValue {
     /// Null value
     Null,
@@ -146,6 +146,12 @@ pub enum VmValue {
 
     /// Pair (used internally)
     Pair(Arc<(VmValue, VmValue)>),
+
+    /// External function (registered from Rust)
+    ExternalFunc {
+        func: crate::ExternalFn,
+        num_params: usize,
+    },
 }
 
 /// Lambda closure
@@ -161,6 +167,37 @@ pub struct LambdaClosure {
 pub struct RegexValue {
     pub pattern: String,
     // We'll add actual regex later
+}
+
+impl fmt::Debug for VmValue {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            VmValue::Null => write!(f, "Null"),
+            VmValue::Boolean(b) => write!(f, "Boolean({})", b),
+            VmValue::Int(i) => write!(f, "Int({})", i),
+            VmValue::Float(n) => write!(f, "Float({})", n),
+            VmValue::String(s) => write!(f, "String({:?})", s),
+            VmValue::Duration { value, unit } => {
+                write!(f, "Duration({} {:?})", value, unit)
+            }
+            VmValue::DataSize { value, unit } => {
+                write!(f, "DataSize({} {:?})", value, unit)
+            }
+            VmValue::List(items) => write!(f, "List({:?})", items),
+            VmValue::Set(items) => write!(f, "Set({:?})", items),
+            VmValue::Map(items) => write!(f, "Map({:?})", items),
+            VmValue::Object(obj) => write!(f, "Object({:?})", obj),
+            VmValue::Lambda(l) => write!(f, "Lambda({:?})", l),
+            VmValue::Regex(r) => write!(f, "Regex({:?})", r),
+            VmValue::IntSeq { start, end, step } => {
+                write!(f, "IntSeq({}, {}, {})", start, end, step)
+            }
+            VmValue::Pair(p) => write!(f, "Pair({:?}, {:?})", p.0, p.1),
+            VmValue::ExternalFunc { num_params, .. } => {
+                write!(f, "ExternalFunc(num_params={})", num_params)
+            }
+        }
+    }
 }
 
 impl VmValue {
@@ -197,6 +234,7 @@ impl VmValue {
             VmValue::Regex(_) => "Regex",
             VmValue::IntSeq { .. } => "IntSeq",
             VmValue::Pair(_) => "Pair",
+            VmValue::ExternalFunc { .. } => "Function",
         }
     }
 
@@ -325,6 +363,7 @@ impl fmt::Display for VmValue {
                 write!(f, "IntSeq({}, {}, {})", start, end, step)
             }
             VmValue::Pair(p) => write!(f, "Pair({}, {})", p.0, p.1),
+            VmValue::ExternalFunc { .. } => write!(f, "<external function>"),
         }
     }
 }
@@ -456,6 +495,11 @@ impl Hash for VmValue {
                 p.0.hash(state);
                 p.1.hash(state);
             }
+            VmValue::ExternalFunc { func, num_params } => {
+                // Hash by function pointer and param count
+                Arc::as_ptr(func).hash(state);
+                num_params.hash(state);
+            }
         }
     }
 }
@@ -563,6 +607,7 @@ impl Serialize for VmValue {
                 seq.serialize_element(&p.1)?;
                 seq.end()
             }
+            VmValue::ExternalFunc { .. } => serializer.serialize_str("<external function>"),
         }
     }
 }

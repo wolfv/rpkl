@@ -10,6 +10,7 @@ pub mod error;
 pub mod evaluator;
 pub mod loader;
 pub mod object;
+pub mod packages;
 pub mod scope;
 pub mod value;
 
@@ -17,5 +18,6 @@ pub use error::{EvalError, EvalResult};
 pub use evaluator::{Evaluator, ExternalFn, ExternalRegistry};
 pub use loader::{LoadedModule, ModuleLoader};
 pub use object::{ObjectKind, ObjectMember, VmObject};
+pub use packages::{DiskCachedPackageResolver, PackageResolver, PackageUri};
 pub use scope::{Scope, ScopeRef};
 pub use value::{DataSizeUnit, DurationUnit, LambdaClosure, VmValue};

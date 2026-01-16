@@ -25,6 +25,9 @@ pub struct ExternalRegistry {
     methods: std::collections::HashMap<String, std::collections::HashMap<String, ExternalFn>>,
     /// Properties: type_name -> property_name -> fn
     properties: std::collections::HashMap<String, std::collections::HashMap<String, ExternalFn>>,
+    /// Module-level functions: module_name -> function_name -> fn
+    /// Used for `external function` declarations in PKL modules
+    functions: std::collections::HashMap<String, std::collections::HashMap<String, ExternalFn>>,
 }
 
 impl ExternalRegistry {
@@ -46,12 +49,30 @@ impl ExternalRegistry {
             .insert(prop.to_string(), f);
     }
 
+    /// Register an external function for a module
+    ///
+    /// This is used for `external function` declarations in PKL modules.
+    /// The module_name can be:
+    /// - A simple module name like "Variant"
+    /// - A full module path for more specific matching
+    pub fn register_function(&mut self, module_name: &str, function_name: &str, f: ExternalFn) {
+        self.functions
+            .entry(module_name.to_string())
+            .or_default()
+            .insert(function_name.to_string(), f);
+    }
+
     pub fn get_method(&self, type_name: &str, method: &str) -> Option<&ExternalFn> {
         self.methods.get(type_name)?.get(method)
     }
 
     pub fn get_property(&self, type_name: &str, prop: &str) -> Option<&ExternalFn> {
         self.properties.get(type_name)?.get(prop)
+    }
+
+    /// Get an external function for a module
+    pub fn get_function(&self, module_name: &str, function_name: &str) -> Option<&ExternalFn> {
+        self.functions.get(module_name)?.get(function_name)
     }
 }
 
@@ -224,6 +245,40 @@ impl Evaluator {
                         };
                         let member = ObjMember::with_value(VmValue::Lambda(Arc::new(closure)));
                         obj.add_property(method.name.node.clone(), member);
+                    } else if method.modifiers.is_external {
+                        // External function - look up in the registry
+                        // Get module name from header or path
+                        let module_name = module
+                            .header
+                            .as_ref()
+                            .and_then(|h| match &h.kind {
+                                rpkl_parser::ModuleKind::Module { name, .. } => name
+                                    .as_ref()
+                                    .map(|n| n.parts.last().map(|p| p.node.as_str()).unwrap_or("")),
+                                _ => None,
+                            })
+                            .unwrap_or_else(|| {
+                                module_path
+                                    .file_stem()
+                                    .and_then(|s| s.to_str())
+                                    .unwrap_or("")
+                            });
+
+                        let method_name = method.name.node.as_str();
+
+                        // Create a wrapper lambda that calls the external function
+                        if let Some(ext_fn) = self.externals.get_function(module_name, method_name)
+                        {
+                            let ext_fn = Arc::clone(ext_fn);
+                            let num_params = method.params.len();
+                            let wrapper = VmValue::ExternalFunc {
+                                func: ext_fn,
+                                num_params,
+                            };
+                            let member = ObjMember::with_value(wrapper);
+                            obj.add_property(method.name.node.clone(), member);
+                        }
+                        // If no external implementation is found, the function will fail at runtime
                     }
                 }
                 ModuleMember::Class(class) => {
@@ -475,6 +530,24 @@ impl Evaluator {
                             }
                             return ext_fn(&all_args, self, scope);
                         }
+
+                        // For typed objects with generics like "Mapping<String, String>",
+                        // also try the base type name ("Mapping")
+                        if let ObjectKind::Typed(name) = &obj.kind {
+                            if let Some(base_type) = name.split('<').next() {
+                                if base_type != name.as_str() {
+                                    if let Some(ext_fn) =
+                                        self.externals.get_method(base_type, method_name)
+                                    {
+                                        let mut all_args = vec![base_value];
+                                        for arg in args {
+                                            all_args.push(self.eval_expr(arg, scope)?);
+                                        }
+                                        return ext_fn(&all_args, self, scope);
+                                    }
+                                }
+                            }
+                        }
                     }
 
                     // Fall back to getting the member as a callable value
@@ -595,11 +668,46 @@ impl Evaluator {
                 let uri_str = uri_val
                     .as_string()
                     .ok_or_else(|| EvalError::type_error("String", uri_val.type_name()))?;
-                // For now, return an error (file reading to be implemented)
-                if *is_nullable {
-                    Ok(VmValue::Null)
+
+                // Handle different URI schemes
+                if let Some(env_name) = uri_str.strip_prefix("env:") {
+                    // Read environment variable
+                    match std::env::var(env_name) {
+                        Ok(value) => Ok(VmValue::string(value)),
+                        Err(_) => {
+                            if *is_nullable {
+                                Ok(VmValue::Null)
+                            } else {
+                                Err(EvalError::IoError(format!(
+                                    "Environment variable not set: {}",
+                                    env_name
+                                )))
+                            }
+                        }
+                    }
+                } else if let Some(prop_name) = uri_str.strip_prefix("prop:") {
+                    // Read system property (similar to Java system properties)
+                    // For now, just map to environment variables
+                    match std::env::var(prop_name) {
+                        Ok(value) => Ok(VmValue::string(value)),
+                        Err(_) => {
+                            if *is_nullable {
+                                Ok(VmValue::Null)
+                            } else {
+                                Err(EvalError::IoError(format!(
+                                    "System property not set: {}",
+                                    prop_name
+                                )))
+                            }
+                        }
+                    }
                 } else {
-                    Err(EvalError::IoError(format!("Cannot read URI: {}", uri_str)))
+                    // Other URIs not yet supported
+                    if *is_nullable {
+                        Ok(VmValue::Null)
+                    } else {
+                        Err(EvalError::IoError(format!("Cannot read URI: {}", uri_str)))
+                    }
                 }
             }
             ExprKind::ReadGlob { uri: _ } => {
@@ -1151,7 +1259,7 @@ impl Evaluator {
         &self,
         callee: &VmValue,
         args: &[VmValue],
-        _scope: &ScopeRef,
+        scope: &ScopeRef,
     ) -> EvalResult<VmValue> {
         match callee {
             VmValue::Lambda(closure) => {
@@ -1169,6 +1277,16 @@ impl Evaluator {
                     .collect();
                 let new_scope = Scope::for_lambda(&closure.captured_scope, bindings);
                 self.eval_expr(&closure.body, &new_scope)
+            }
+            VmValue::ExternalFunc { func, num_params } => {
+                if args.len() != *num_params {
+                    return Err(EvalError::WrongArgCount {
+                        expected: *num_params,
+                        actual: args.len(),
+                    });
+                }
+                // Call the external function
+                func(args, self, scope)
             }
             _ => Err(EvalError::NotCallable(callee.type_name().to_string())),
         }

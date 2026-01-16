@@ -70,6 +70,12 @@ pub enum EvalError {
 
     #[error("Type cast failed: cannot cast {actual} to {target}")]
     TypeCastFailed { actual: String, target: String },
+
+    #[error("Invalid package URI: {0}")]
+    InvalidPackageUri(String),
+
+    #[error("Package not found: {0}")]
+    PackageNotFound(String),
 }
 
 impl EvalError {

@@ -5,6 +5,7 @@ members = [
     "crates/rpkl-runtime",
     "crates/rpkl-stdlib",
     "crates/rpkl",
+    "crates/rpkl-lsp",
 ]
 
 [workspace.package]
@@ -28,6 +29,13 @@ serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 serde_yaml = "0.9"
 
+# Package support
+reqwest = { version = "0.12", features = ["blocking", "rustls-tls"], default-features = false }
+zip = "2.2"
+sha2 = "0.10"
+hex = "0.4"
+dirs = "5.0"
+
 # CLI
 clap = { version = "4.4", features = ["derive"] }
 
@@ -38,3 +46,4 @@ insta = { version = "1.34", features = ["yaml"] }
 rpkl-parser = { path = "crates/rpkl-parser" }
 rpkl-runtime = { path = "crates/rpkl-runtime" }
 rpkl-stdlib = { path = "crates/rpkl-stdlib" }
+rpkl-lsp = { path = "crates/rpkl-lsp" }

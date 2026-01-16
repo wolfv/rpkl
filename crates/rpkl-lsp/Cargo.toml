@@ -1,0 +1,35 @@
+[package]
+name = "rpkl-lsp"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Language Server Protocol implementation for the PKL configuration language"
+
+[[bin]]
+name = "rpkl-lsp"
+path = "src/main.rs"
+
+[dependencies]
+rpkl-parser = { workspace = true }
+rpkl-runtime = { workspace = true }
+rpkl-stdlib = { workspace = true }
+
+# LSP dependencies
+tower-lsp = "0.20"
+tokio = { version = "1.0", features = ["full"] }
+
+# Async and concurrency
+dashmap = "6"
+async-trait = "0.1"
+
+# Serialization
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+# Logging
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# URL handling
+url = "2.5"

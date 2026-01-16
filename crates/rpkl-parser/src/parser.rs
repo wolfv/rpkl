@@ -766,7 +766,7 @@ fn build_expr_with_precedence(
             if op.precedence() == precedence {
                 let left_expr = exprs.remove(i);
                 let right_expr = exprs.remove(i);
-                let span = left_expr.span;
+                let span = left_expr.span.merge(right_expr.span);
 
                 let combined = Expr {
                     kind: ExprKind::Binary {

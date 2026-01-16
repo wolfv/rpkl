@@ -10,10 +10,11 @@
 
 use std::fs;
 use std::path::PathBuf;
+use std::sync::Arc;
 
 use clap::{Parser, Subcommand, ValueEnum};
 use rpkl_parser::parse_module;
-use rpkl_runtime::Evaluator;
+use rpkl_runtime::{Evaluator, VmValue};
 use rpkl_stdlib::stdlib_registry;
 
 #[derive(Parser)]
@@ -80,7 +81,18 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             format,
             pretty,
         } => {
-            let registry = stdlib_registry();
+            let mut registry = stdlib_registry();
+            // Register the _recordAccess external function for Variant.pkl
+            // This is a pass-through that just returns the value (no tracking in CLI)
+            registry.register_function(
+                "Variant",
+                "_recordAccess",
+                Arc::new(|args, _eval, _scope| {
+                    // Just return the second argument (the value)
+                    let value = args.get(1).cloned().unwrap_or(VmValue::string(""));
+                    Ok(value)
+                }),
+            );
             let evaluator = Evaluator::with_externals(registry);
             let result = evaluator
                 .eval_file(&file)
@@ -271,6 +283,7 @@ fn render_pcf_value(value: &rpkl_runtime::VmValue, indent: usize) -> String {
                 render_pcf_value(&p.1, indent)
             )
         }
+        VmValue::ExternalFunc { .. } => "<external function>".to_string(),
     }
 }
 

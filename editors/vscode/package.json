@@ -1,0 +1,91 @@
+{
+  "name": "rpkl",
+  "displayName": "PKL Language Support",
+  "description": "Language support for the PKL configuration language",
+  "version": "0.1.0",
+  "publisher": "prefix-dev",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/prefix-dev/rpkl"
+  },
+  "license": "Apache-2.0",
+  "engines": {
+    "vscode": "^1.75.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "activationEvents": [
+    "onLanguage:pkl"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "languages": [
+      {
+        "id": "pkl",
+        "aliases": [
+          "PKL",
+          "pkl",
+          "Pkl"
+        ],
+        "extensions": [
+          ".pkl"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "pkl",
+        "scopeName": "source.pkl",
+        "path": "./syntaxes/pkl.tmLanguage.json"
+      }
+    ],
+    "configuration": {
+      "type": "object",
+      "title": "PKL",
+      "properties": {
+        "pkl.server.path": {
+          "type": "string",
+          "default": "",
+          "description": "Path to the rpkl-lsp executable. If not set, will look for 'rpkl-lsp' in PATH."
+        },
+        "pkl.trace.server": {
+          "type": "string",
+          "enum": [
+            "off",
+            "messages",
+            "verbose"
+          ],
+          "default": "off",
+          "description": "Traces the communication between VS Code and the language server."
+        }
+      }
+    },
+    "commands": [
+      {
+        "command": "pkl.restartServer",
+        "title": "PKL: Restart Language Server"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "lint": "eslint src --ext ts",
+    "package": "vsce package"
+  },
+  "dependencies": {
+    "vscode-languageclient": "^9.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.75.0",
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "@typescript-eslint/parser": "^7.0.0",
+    "@vscode/vsce": "^2.24.0",
+    "eslint": "^8.56.0",
+    "typescript": "^5.3.0"
+  }
+}
