@@ -1,14 +1,14 @@
 {
-  "name": "rpkl",
-  "displayName": "PKL Language Support",
-  "description": "Language support for the PKL configuration language",
+  "name": "pkl-language-support",
+  "displayName": "PKL Language Support (Rust)",
+  "description": "Language support for the PKL configuration language, implemented in Rust.",
   "version": "0.1.0",
   "publisher": "prefix-dev",
   "repository": {
     "type": "git",
     "url": "https://github.com/prefix-dev/rpkl"
   },
-  "license": "Apache-2.0",
+  "license": "BSD-3-Clause",
   "engines": {
     "vscode": "^1.75.0"
   },
@@ -80,12 +80,12 @@
     "vscode-languageclient": "^9.0.1"
   },
   "devDependencies": {
-    "@types/node": "^20.0.0",
+    "@types/node": "^25.0.9",
     "@types/vscode": "^1.75.0",
-    "@typescript-eslint/eslint-plugin": "^7.0.0",
-    "@typescript-eslint/parser": "^7.0.0",
-    "@vscode/vsce": "^2.24.0",
-    "eslint": "^8.56.0",
+    "@typescript-eslint/eslint-plugin": "^8.53.0",
+    "@typescript-eslint/parser": "^8.53.0",
+    "@vscode/vsce": "^3.7.1",
+    "eslint": "^9.39.2",
     "typescript": "^5.3.0"
   }
 }
