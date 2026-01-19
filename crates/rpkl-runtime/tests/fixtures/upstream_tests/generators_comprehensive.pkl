@@ -1,0 +1,107 @@
+// Comprehensive generator tests ported from apple/pkl test suite
+// Tests for-in generators with various collection types and nested generators
+
+// Basic for generator with IntSeq
+res1 = new Listing {
+  for (n in IntSeq(1, 5)) {
+    n * 2
+  }
+}
+
+// For generator with index
+res2 = new Listing {
+  for (i, n in IntSeq(1, 5)) {
+    i * n
+  }
+}
+
+// For generator over List
+res3 = new Listing {
+  for (n in List(1, 2, 3, 4, 5)) {
+    n * 2
+  }
+}
+
+// For generator with List and index
+res4 = new Listing {
+  for (i, n in List(10, 20, 30)) {
+    i + n
+  }
+}
+
+// Nested for generators
+res5 = new Listing {
+  for (x in List("a", "b", "c")) {
+    for (y in List("1", "2")) {
+      x + y
+    }
+  }
+}
+
+// For generator with when filter
+res6 = new Listing {
+  for (n in IntSeq(1, 10)) {
+    when (n.isOdd) {
+      n
+    }
+  }
+}
+
+// Complex: for with when and nested condition
+res7 = new Listing {
+  for (n in IntSeq(1, 10)) {
+    when (n > 3) {
+      when (n.isEven) {
+        n * 10
+      }
+    }
+  }
+}
+
+// When generator standalone
+res8 = new Listing {
+  "always"
+  when (1 + 1 == 2) { "condition true" }
+  when (1 + 1 == 3) { "condition false" }
+}
+
+// When generator with else
+res9 = new Listing {
+  when (false) { "true branch" } else { "false branch" }
+}
+
+// Mixed elements and generators
+res10 = new Listing {
+  "start"
+  for (n in IntSeq(1, 3)) {
+    n
+  }
+  "middle"
+  for (s in List("x", "y")) {
+    s
+  }
+  "end"
+}
+
+// For generator in Mapping
+res11 = new Mapping {
+  for (n in IntSeq(1, 3)) {
+    [n.toString()] = n * 10
+  }
+}
+
+// For generator with multiple variables reuse
+res12 = new Listing {
+  for (n in IntSeq(1, 3)) { n }
+  for (n in List("a", "b", "c")) { n }
+  for (n in IntSeq(1, 3)) { n + 10 }
+}
+
+// Nested for generators with indices
+res13 = new Listing {
+  for (i1, x in List("a", "b")) {
+    for (i2, y in List("1", "2")) {
+      "\(i1),\(i2): \(x)\(y)"
+    }
+  }
+}

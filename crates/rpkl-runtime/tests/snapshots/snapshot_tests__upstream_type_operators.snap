@@ -1,0 +1,98 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+expression: eval_pkl_file(&path)
+---
+{
+  "intVal": 42,
+  "floatVal": 3.14,
+  "strVal": "hello",
+  "boolVal": true,
+  "nullVal": null,
+  "is_int": true,
+  "is_float": true,
+  "is_string": true,
+  "is_bool": true,
+  "is_null": true,
+  "is_int_number": true,
+  "is_float_number": true,
+  "is_int_not_string": false,
+  "is_string_not_int": false,
+  "is_float_not_int": false,
+  "maybeString": "present",
+  "absentString": null,
+  "is_nullable_present": true,
+  "is_nullable_absent": true,
+  "is_nullable_check_inner": true,
+  "is_null_is_nullable": true,
+  "is_any_int": true,
+  "is_any_string": true,
+  "is_any_null": true,
+  "union1": 42,
+  "union2": "hello",
+  "is_union_int": true,
+  "is_union_string": true,
+  "is_union_both_as_union": true,
+  "is_union_check_wrong": false,
+  "list1": [
+    1,
+    2,
+    3
+  ],
+  "set1": [
+    1,
+    2,
+    3
+  ],
+  "map1": {
+    "a": 1
+  },
+  "is_list": true,
+  "is_set": true,
+  "is_map": true,
+  "is_list_collection": false,
+  "is_set_collection": false,
+  "is_list_int": true,
+  "is_list_string": false,
+  "dog1": {
+    "name": "Buddy",
+    "breed": "Labrador"
+  },
+  "is_dog": true,
+  "is_dog_animal": false,
+  "is_dog_not_string": false,
+  "is_positive": true,
+  "is_not_positive": false,
+  "is_in_range": true,
+  "is_not_in_range": false,
+  "anyInt": 42,
+  "anyString": "hello",
+  "as_int": 42,
+  "as_string": "hello",
+  "intForCoerce": 42,
+  "as_number": 42,
+  "presentValue": "hello",
+  "absentValue": null,
+  "as_nullable_present": "hello",
+  "as_nullable_absent": null,
+  "mixedTypeList": [
+    1,
+    2,
+    3
+  ],
+  "as_list_int": [
+    1,
+    2,
+    3
+  ],
+  "describeValue": "<function>",
+  "describe_int": "integer: 42",
+  "describe_string": "string: hello",
+  "describe_bool": "boolean: true",
+  "processIfPositive": "<function>",
+  "process_positive": 10,
+  "process_negative": 0,
+  "process_string": 0,
+  "is_format_json": true,
+  "is_format_yaml": true,
+  "is_format_other": false
+}

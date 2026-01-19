@@ -1,0 +1,58 @@
+// Test when generator syntax with module context
+
+env = "production"
+
+// Basic when generator
+requests = new {
+  when (module.env == "production") {
+    ["cpu"] = 1
+    ["memory"] = 1.gib
+  }
+  when (module.env == "staging") {
+    ["cpu"] = 0.1
+    ["memory"] = 100.mib
+  }
+}
+
+// When generator with else clause
+limits = new {
+  when (module.env == "production") {
+    maxConnections = 1000
+    timeout = 30.s
+  } else {
+    maxConnections = 100
+    timeout = 10.s
+  }
+}
+
+// When in Listing
+features = new Listing {
+  "base"
+  when (module.env == "production") {
+    "monitoring"
+    "logging"
+  }
+}
+
+// Nested when
+config = new {
+  name = "myapp"
+  when (module.env == "production") {
+    replicas = 3
+    when (true) {
+      highAvailability = true
+    }
+  }
+}
+
+// When with local variable
+local isProd = env == "production"
+scalingConfig = new {
+  when (isProd) {
+    minReplicas = 2
+    maxReplicas = 10
+  } else {
+    minReplicas = 1
+    maxReplicas = 2
+  }
+}

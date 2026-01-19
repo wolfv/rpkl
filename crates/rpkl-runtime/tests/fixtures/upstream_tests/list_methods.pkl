@@ -1,0 +1,102 @@
+// Comprehensive list method tests ported from apple/pkl test suite
+
+local list1 = List(1, 2, 3)
+local list2 = List(1, 2, 3, 4, 5)
+local list3 = List("a", "b", "c", "d")
+
+// Basic properties
+test_length = list1.length
+test_isEmpty_empty = List().isEmpty
+test_isEmpty_nonempty = list1.isEmpty
+test_first = list1.first
+test_last = list1.last
+test_rest = list1.rest
+test_lastIndex = list1.lastIndex
+test_single = List(42).single
+
+// Element access
+test_contains_true = list1.contains(2)
+test_contains_false = list1.contains(10)
+
+// Functional operations
+test_map = list1.map((x) -> x * 2)
+test_map_strings = list3.map((s) -> s.toUpperCase())
+test_filter = list2.filter((x) -> x > 2)
+test_filter_all = list1.filter((x) -> x > 10)
+test_filter_none = list1.filter((x) -> x > 0)
+
+// Fold/Reduce
+test_fold_sum = list1.fold(0, (acc, x) -> acc + x)
+test_fold_product = list1.fold(1, (acc, x) -> acc * x)
+test_fold_list = list1.fold(List(), (acc, x) -> acc.add(x * 2))
+
+// Every/Any
+test_every_true = list1.every((x) -> x > 0)
+test_every_false = list1.every((x) -> x > 2)
+test_any_true = list1.any((x) -> x > 2)
+test_any_false = list1.any((x) -> x > 10)
+
+// Take/Drop
+test_take = list2.take(3)
+test_take_zero = list2.take(0)
+test_takeLast = list2.takeLast(3)
+test_drop = list2.drop(2)
+test_drop_zero = list2.drop(0)
+test_dropLast = list2.dropLast(2)
+
+// FlatMap/Flatten
+test_flatMap = list1.flatMap((x) -> List(x, x + 10))
+test_flatten = List(List(1, 2), List(3, 4), List(5)).flatten()
+
+// Find operations
+test_find = list2.find((x) -> x > 3)
+test_findLast = list2.findLast((x) -> x < 4)
+test_indexOf = list1.indexOf(2)
+test_lastIndexOf = List(1, 2, 3, 2, 1).lastIndexOf(2)
+test_findIndex = list2.findIndex((x) -> x > 3)
+test_count = list2.count((x) -> x.isOdd)
+
+// Modify operations
+test_add = list1.add(4)
+test_reverse = list1.reverse()
+test_distinct = List(1, 2, 2, 3, 3, 3).distinct
+test_replace = list1.replace(1, 99)
+
+// Join
+test_join = list3.join("-")
+test_join_empty = List().join(",")
+test_join_single = List("only").join(",")
+
+// Conversion
+test_toList = list1.toList()
+test_toSet = List(1, 2, 2, 3).toSet()
+test_toListing = list1.toListing()
+
+// Sort
+test_sort = List(3, 1, 4, 1, 5, 9, 2, 6).sort()
+test_sortStrings = List("banana", "apple", "cherry").sort()
+
+// Indexed operations
+test_mapIndexed = list3.mapIndexed((i, s) -> "\(i): \(s)")
+test_filterIndexed = list1.filterIndexed((i, n) -> i.isOdd)
+test_foldIndexed = list1.foldIndexed(0, (i, acc, x) -> acc + i + x)
+
+// Zip
+test_zip = List(1, 2, 3).zip(List("a", "b", "c"))
+
+// Min/Max
+test_min = list2.min
+test_max = list2.max
+test_minBy = list3.minBy((s) -> s.length)
+test_maxBy = list3.maxBy((s) -> s.length)
+
+// Split/Partition
+test_split = list2.split(2)
+test_partition = list2.partition((x) -> x.isOdd)
+
+// GroupBy
+test_groupBy = list2.groupBy((x) -> x.isOdd)
+
+// Repeat
+test_repeat = List(1, 2).repeat(3)
+test_repeat_zero = list1.repeat(0)

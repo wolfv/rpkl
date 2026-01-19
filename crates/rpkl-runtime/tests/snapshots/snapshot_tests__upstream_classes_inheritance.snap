@@ -1,0 +1,120 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+expression: eval_pkl_file(&path)
+---
+{
+  "person1": {
+    "name": "Alice",
+    "age": 30
+  },
+  "person2": {
+    "name": "Bob",
+    "age": 30
+  },
+  "person3": {
+    "name": "Bob",
+    "age": 25
+  },
+  "rect1": {
+    "width": 10,
+    "height": 5,
+    "area": "<function>",
+    "perimeter": "<function>"
+  },
+  "rect_area": 50,
+  "rect_perimeter": 30,
+  "dog1": {
+    "name": "Buddy",
+    "sound": "woof",
+    "breed": "Golden Retriever"
+  },
+  "dog_sound": "woof",
+  "cat1": {
+    "name": "Whiskers",
+    "sound": "meow",
+    "indoor": true
+  },
+  "cat_sound": "meow",
+  "car1": {
+    "brand": "Ferrari",
+    "year": 2023,
+    "doors": 2,
+    "topSpeed": 340
+  },
+  "config_default": {
+    "host": "localhost",
+    "port": 8080,
+    "debug": false
+  },
+  "config_custom": {
+    "host": "api.example.com",
+    "port": 443,
+    "debug": true
+  },
+  "config_partial": {
+    "host": "localhost",
+    "port": 9000,
+    "debug": false
+  },
+  "config_amended": {
+    "host": "localhost",
+    "port": 8080,
+    "debug": true
+  },
+  "positive1": {
+    "value": 42
+  },
+  "adult1": {
+    "name": "Charlie",
+    "age": 21
+  },
+  "optional1": {
+    "required": "must have",
+    "optional": null
+  },
+  "optional2": {
+    "required": "must have",
+    "optional": "also have"
+  },
+  "circle1": {
+    "radius": 5,
+    "diameter": 10,
+    "area": 78.53975,
+    "circumference": 31.4159
+  },
+  "circle_props": {
+    "r": 5,
+    "d": 10,
+    "a": 78.53975,
+    "c": 31.4159
+  },
+  "response_string": {
+    "status": 200,
+    "body": "OK"
+  },
+  "response_int": {
+    "status": 200,
+    "body": 42
+  },
+  "response_bool": {
+    "status": 200,
+    "body": true
+  },
+  "team1": {
+    "name": "Engineering",
+    "members": [
+      "Alice",
+      "Bob",
+      "Charlie"
+    ]
+  },
+  "team_members_count": 3,
+  "db1": {
+    "name": "mydb",
+    "tables": {
+      "users": 1000,
+      "orders": 5000,
+      "products": 200
+    }
+  }
+}

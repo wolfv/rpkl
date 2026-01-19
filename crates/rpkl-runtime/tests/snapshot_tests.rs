@@ -337,12 +337,12 @@ fn test_string_manipulation() {
 
 #[test]
 fn test_int_methods() {
-    // Note: Avoid identifiers starting with keywords like 'is' as parser may confuse with type_op
+    // Note: abs, sign, isEven, isOdd are properties, not methods
     let source = r#"
-        absVal = (-42).abs()
-        signVal = (-42).sign()
-        evenCheck = 4.isEven()
-        oddCheck = 5.isOdd()
+        absVal = (-42).abs
+        signVal = (-42).sign
+        evenCheck = 4.isEven
+        oddCheck = 5.isOdd
     "#;
     insta::assert_snapshot!(eval_pkl(source));
 }
@@ -956,5 +956,75 @@ fn test_extends_basic() {
     // Test basic module extension (similar to amends but for type extension)
     let fixtures_dir = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures/inheritance");
     let path = format!("{}/server_config.pkl", fixtures_dir);
+    insta::assert_snapshot!(eval_pkl_file(&path));
+}
+
+// =============================================================================
+// Comprehensive Tests - Ported from apple/pkl upstream
+// These tests are marked #[ignore] until the required features are implemented.
+// Run with `cargo test -- --ignored` to check progress.
+// =============================================================================
+
+#[test]
+fn test_upstream_generators_comprehensive() {
+    let fixtures_dir =
+        concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures/upstream_tests");
+    let path = format!("{}/generators_comprehensive.pkl", fixtures_dir);
+    insta::assert_snapshot!(eval_pkl_file(&path));
+}
+
+#[test]
+fn test_upstream_string_methods() {
+    let fixtures_dir =
+        concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures/upstream_tests");
+    let path = format!("{}/string_methods.pkl", fixtures_dir);
+    insta::assert_snapshot!(eval_pkl_file(&path));
+}
+
+#[test]
+fn test_upstream_list_methods() {
+    let fixtures_dir =
+        concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures/upstream_tests");
+    let path = format!("{}/list_methods.pkl", fixtures_dir);
+    insta::assert_snapshot!(eval_pkl_file(&path));
+}
+
+#[test]
+fn test_upstream_classes_inheritance() {
+    let fixtures_dir =
+        concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures/upstream_tests");
+    let path = format!("{}/classes_inheritance.pkl", fixtures_dir);
+    insta::assert_snapshot!(eval_pkl_file(&path));
+}
+
+#[test]
+fn test_upstream_type_operators() {
+    let fixtures_dir =
+        concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures/upstream_tests");
+    let path = format!("{}/type_operators.pkl", fixtures_dir);
+    insta::assert_snapshot!(eval_pkl_file(&path));
+}
+
+#[test]
+fn test_upstream_numeric_methods() {
+    let fixtures_dir =
+        concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures/upstream_tests");
+    let path = format!("{}/numeric_methods.pkl", fixtures_dir);
+    insta::assert_snapshot!(eval_pkl_file(&path));
+}
+
+#[test]
+fn test_upstream_realworld_config() {
+    let fixtures_dir =
+        concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures/upstream_tests");
+    let path = format!("{}/realworld_config.pkl", fixtures_dir);
+    insta::assert_snapshot!(eval_pkl_file(&path));
+}
+
+#[test]
+fn test_upstream_when_generator() {
+    let fixtures_dir =
+        concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures/upstream_tests");
+    let path = format!("{}/when_generator.pkl", fixtures_dir);
     insta::assert_snapshot!(eval_pkl_file(&path));
 }

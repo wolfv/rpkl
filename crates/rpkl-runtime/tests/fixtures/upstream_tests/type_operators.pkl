@@ -1,0 +1,175 @@
+// Type operator tests (is and as) ported from apple/pkl test suite
+
+// ============================================================================
+// is operator - basic types
+// ============================================================================
+
+local intVal = 42
+local floatVal = 3.14
+local strVal = "hello"
+local boolVal = true
+local nullVal = null
+
+// Basic type checks
+is_int = intVal is Int
+is_float = floatVal is Float
+is_string = strVal is String
+is_bool = boolVal is Boolean
+is_null = nullVal is Null
+
+// Number is supertype of Int and Float
+is_int_number = intVal is Number
+is_float_number = floatVal is Number
+
+// Negative checks
+is_int_not_string = intVal is String
+is_string_not_int = strVal is Int
+is_float_not_int = floatVal is Int
+
+// ============================================================================
+// is operator - nullable types
+// ============================================================================
+
+local maybeString: String? = "present"
+local absentString: String? = null
+
+is_nullable_present = maybeString is String?
+is_nullable_absent = absentString is String?
+is_nullable_check_inner = maybeString is String
+is_null_is_nullable = null is String?
+
+// ============================================================================
+// is operator - Any type
+// ============================================================================
+
+is_any_int = intVal is Any
+is_any_string = strVal is Any
+is_any_null = nullVal is Any
+
+// ============================================================================
+// is operator - union types
+// ============================================================================
+
+local union1: Int|String = 42
+local union2: Int|String = "hello"
+
+is_union_int = union1 is Int
+is_union_string = union2 is String
+is_union_both_as_union = union1 is Int|String
+is_union_check_wrong = union1 is String
+
+// ============================================================================
+// is operator - collections
+// ============================================================================
+
+local list1 = List(1, 2, 3)
+local set1 = Set(1, 2, 3)
+local map1 = Map("a", 1)
+
+is_list = list1 is List
+is_set = set1 is Set
+is_map = map1 is Map
+
+is_list_collection = list1 is Collection
+is_set_collection = set1 is Collection
+
+// Parameterized types
+is_list_int = list1 is List<Int>
+is_list_string = list1 is List<String>
+
+// ============================================================================
+// is operator - classes
+// ============================================================================
+
+class Animal {
+  name: String
+}
+
+class Dog extends Animal {
+  breed: String
+}
+
+local dog1 = new Dog { name = "Buddy"; breed = "Labrador" }
+
+is_dog = dog1 is Dog
+is_dog_animal = dog1 is Animal
+is_dog_not_string = dog1 is String
+
+// ============================================================================
+// is operator - constrained types
+// ============================================================================
+
+is_positive = 5 is Int(this > 0)
+is_not_positive = -5 is Int(this > 0)
+is_in_range = 50 is Int(this >= 0 && this <= 100)
+is_not_in_range = 150 is Int(this >= 0 && this <= 100)
+
+// ============================================================================
+// as operator - basic casting
+// ============================================================================
+
+local anyInt: Any = 42
+local anyString: Any = "hello"
+
+as_int = anyInt as Int
+as_string = anyString as String
+
+// ============================================================================
+// as operator - numeric coercion
+// ============================================================================
+
+local intForCoerce = 42
+as_number = intForCoerce as Number
+
+// ============================================================================
+// as operator - nullable casting
+// ============================================================================
+
+local presentValue: String? = "hello"
+local absentValue: String? = null
+
+as_nullable_present = presentValue as String?
+as_nullable_absent = absentValue as String?
+
+// ============================================================================
+// as operator - parameterized list
+// ============================================================================
+
+local mixedTypeList: List<Any> = List(1, 2, 3)
+as_list_int = mixedTypeList as List<Int>
+
+// ============================================================================
+// Using type checks in conditionals
+// ============================================================================
+
+local function describeValue(val) =
+  if (val is Int) "integer: \(val)"
+  else if (val is String) "string: \(val)"
+  else if (val is Boolean) "boolean: \(val)"
+  else "unknown"
+
+describe_int = describeValue(42)
+describe_string = describeValue("hello")
+describe_bool = describeValue(true)
+
+// ============================================================================
+// Type assertions in logic
+// ============================================================================
+
+local function processIfPositive(n) =
+  if (n is Int && n > 0)
+    n * 2
+  else
+    0
+
+process_positive = processIfPositive(5)
+process_negative = processIfPositive(-5)
+process_string = processIfPositive("hello")
+
+// ============================================================================
+// Constrained string types
+// ============================================================================
+
+is_format_json = "json" is "json"|"yaml"|"xml"
+is_format_yaml = "yaml" is "json"|"yaml"|"xml"
+is_format_other = "toml" is "json"|"yaml"|"xml"

@@ -1,0 +1,243 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+expression: eval_pkl_file(&path)
+---
+{
+  "list1": [
+    1,
+    2,
+    3
+  ],
+  "list2": [
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
+  "list3": [
+    "a",
+    "b",
+    "c",
+    "d"
+  ],
+  "test_length": 3,
+  "test_isEmpty_empty": true,
+  "test_isEmpty_nonempty": false,
+  "test_first": 1,
+  "test_last": 3,
+  "test_rest": [
+    2,
+    3
+  ],
+  "test_lastIndex": 2,
+  "test_single": 42,
+  "test_contains_true": true,
+  "test_contains_false": false,
+  "test_map": [
+    2,
+    4,
+    6
+  ],
+  "test_map_strings": [
+    "A",
+    "B",
+    "C",
+    "D"
+  ],
+  "test_filter": [
+    3,
+    4,
+    5
+  ],
+  "test_filter_all": [],
+  "test_filter_none": [
+    1,
+    2,
+    3
+  ],
+  "test_fold_sum": 6,
+  "test_fold_product": 6,
+  "test_fold_list": [
+    2,
+    4,
+    6
+  ],
+  "test_every_true": true,
+  "test_every_false": false,
+  "test_any_true": true,
+  "test_any_false": false,
+  "test_take": [
+    1,
+    2,
+    3
+  ],
+  "test_take_zero": [],
+  "test_takeLast": [
+    3,
+    4,
+    5
+  ],
+  "test_drop": [
+    3,
+    4,
+    5
+  ],
+  "test_drop_zero": [
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
+  "test_dropLast": [
+    1,
+    2,
+    3
+  ],
+  "test_flatMap": [
+    1,
+    11,
+    2,
+    12,
+    3,
+    13
+  ],
+  "test_flatten": [
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
+  "test_find": 4,
+  "test_findLast": 3,
+  "test_indexOf": 1,
+  "test_lastIndexOf": 3,
+  "test_findIndex": 3,
+  "test_count": 3,
+  "test_add": [
+    1,
+    2,
+    3,
+    4
+  ],
+  "test_reverse": [
+    3,
+    2,
+    1
+  ],
+  "test_distinct": [
+    1,
+    2,
+    3
+  ],
+  "test_replace": [
+    1,
+    99,
+    3
+  ],
+  "test_join": "a-b-c-d",
+  "test_join_empty": "",
+  "test_join_single": "only",
+  "test_toList": [
+    1,
+    2,
+    3
+  ],
+  "test_toSet": [
+    1,
+    2,
+    3
+  ],
+  "test_toListing": [
+    1,
+    2,
+    3
+  ],
+  "test_sort": [
+    1,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    9
+  ],
+  "test_sortStrings": [
+    "apple",
+    "banana",
+    "cherry"
+  ],
+  "test_mapIndexed": [
+    "0: a",
+    "1: b",
+    "2: c",
+    "3: d"
+  ],
+  "test_filterIndexed": [
+    2
+  ],
+  "test_foldIndexed": 9,
+  "test_zip": [
+    [
+      1,
+      "a"
+    ],
+    [
+      2,
+      "b"
+    ],
+    [
+      3,
+      "c"
+    ]
+  ],
+  "test_min": 1,
+  "test_max": 5,
+  "test_minBy": "a",
+  "test_maxBy": "a",
+  "test_split": [
+    [
+      1,
+      2
+    ],
+    [
+      3,
+      4,
+      5
+    ]
+  ],
+  "test_partition": [
+    [
+      1,
+      3,
+      5
+    ],
+    [
+      2,
+      4
+    ]
+  ],
+  "test_groupBy": {
+    "true": [
+      1,
+      3,
+      5
+    ],
+    "false": [
+      2,
+      4
+    ]
+  },
+  "test_repeat": [
+    1,
+    2,
+    1,
+    2,
+    1,
+    2
+  ],
+  "test_repeat_zero": []
+}

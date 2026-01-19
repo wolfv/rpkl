@@ -1,0 +1,204 @@
+// Numeric method tests ported from apple/pkl test suite
+
+// ============================================================================
+// Int methods
+// ============================================================================
+
+local posInt = 42
+local negInt = -17
+local zero = 0
+
+// Basic properties
+int_abs_positive = posInt.abs
+int_abs_negative = negInt.abs
+int_abs_zero = zero.abs
+
+int_sign_positive = posInt.sign
+int_sign_negative = negInt.sign
+int_sign_zero = zero.sign
+
+int_isPositive_pos = posInt.isPositive
+int_isPositive_neg = negInt.isPositive
+int_isPositive_zero = zero.isPositive
+
+int_isNegative_pos = posInt.isNegative
+int_isNegative_neg = negInt.isNegative
+
+int_isZero = zero.isZero
+int_isNonZero = posInt.isNonZero
+
+int_isOdd_odd = 7.isOdd
+int_isOdd_even = 8.isOdd
+int_isEven_even = 8.isEven
+int_isEven_odd = 7.isEven
+
+// String conversion
+int_toString = posInt.toString()
+int_toString_neg = negInt.toString()
+int_toString_radix_2 = 42.toRadixString(2)
+int_toString_radix_16 = 255.toRadixString(16)
+
+// Comparison methods
+int_compareTo_less = 5.compareTo(10)
+int_compareTo_equal = 5.compareTo(5)
+int_compareTo_greater = 10.compareTo(5)
+
+// isBetween
+int_isBetween_true = 5.isBetween(1, 10)
+int_isBetween_edge_low = 1.isBetween(1, 10)
+int_isBetween_edge_high = 10.isBetween(1, 10)
+int_isBetween_false = 15.isBetween(1, 10)
+
+// Bitwise operations
+int_shl = 1.shl(4)
+int_shr = 16.shr(2)
+int_ushr = (-1).ushr(1)
+int_and = 0b1010.and(0b1100)
+int_or = 0b1010.or(0b1100)
+int_xor = 0b1010.xor(0b1100)
+
+// ============================================================================
+// Float methods
+// ============================================================================
+
+local posFloat = 3.14159
+local negFloat = -2.71828
+local zeroFloat = 0.0
+
+// Basic properties
+float_abs_positive = posFloat.abs
+float_abs_negative = negFloat.abs
+float_abs_zero = zeroFloat.abs
+
+float_sign_positive = posFloat.sign
+float_sign_negative = negFloat.sign
+float_sign_zero = zeroFloat.sign
+
+float_isPositive_pos = posFloat.isPositive
+float_isPositive_neg = negFloat.isPositive
+
+float_isNegative_pos = posFloat.isNegative
+float_isNegative_neg = negFloat.isNegative
+
+float_isZero = zeroFloat.isZero
+float_isNonZero = posFloat.isNonZero
+
+// Rounding
+float_ceil = 3.2.ceil()
+float_ceil_neg = (-3.2).ceil()
+float_floor = 3.8.floor()
+float_floor_neg = (-3.2).floor()
+float_round = 3.5.round()
+float_round_down = 3.4.round()
+float_round_neg = (-3.5).round()
+
+float_truncate = 3.9.truncate()
+float_truncate_neg = (-3.9).truncate()
+
+// Float properties
+float_isInfinite_finite = posFloat.isInfinite
+float_isNaN_normal = posFloat.isNaN
+float_isFinite_normal = posFloat.isFinite
+
+// Math operations
+float_sqrt = 16.0.sqrt()
+float_sqrt_2 = 2.0.sqrt()
+
+// Conversion
+float_toInt = 3.9.toInt()
+float_toInt_neg = (-3.9).toInt()
+float_toString = posFloat.toString()
+
+// isBetween
+float_isBetween_true = 3.14.isBetween(3.0, 4.0)
+float_isBetween_false = 5.0.isBetween(1.0, 3.0)
+
+// ============================================================================
+// Number methods (shared by Int and Float)
+// ============================================================================
+
+local num1 = 42
+local num2 = 3.14
+
+number_toString_int = num1.toString()
+number_toString_float = num2.toString()
+
+// ============================================================================
+// Arithmetic edge cases
+// ============================================================================
+
+// Integer overflow/underflow behavior (if applicable)
+large_int = 9223372036854775807
+// small_int = -9223372036854775808  // TODO: This literal parsing needs special handling
+
+// Float special values
+// infinity = 1.0 / 0.0
+// neg_infinity = -1.0 / 0.0
+// nan = 0.0 / 0.0
+
+// ============================================================================
+// Duration and DataSize
+// ============================================================================
+
+// Duration properties (basic)
+dur_ns = 1000.ns
+dur_us = 1.us
+dur_ms = 1.ms
+dur_s = 1.s
+dur_min = 1.min
+dur_h = 1.h
+dur_d = 1.d
+
+// Duration.value, Duration.unit, and Duration.toUnit
+dur_value = 5.s.value
+dur_unit = 5.s.unit
+dur_to_ms = 5.s.toUnit("ms")
+
+// Duration arithmetic
+dur_add = 1.h + 30.min
+dur_mul = 2.s * 3
+dur_div = 6.s / 2
+dur_sub = 2.h - 30.min
+dur_compare = 1.h > 30.min
+dur_compare_lt = 30.min < 1.h
+dur_compare_eq = 60.min == 1.h
+
+// DataSize properties (basic)
+size_b = 1024.b
+size_kb = 1.kb
+size_mb = 1.mb
+size_gb = 1.gb
+size_tb = 1.tb
+
+size_kib = 1.kib
+size_mib = 1.mib
+size_gib = 1.gib
+
+// DataSize.value, DataSize.unit, and DataSize.toUnit
+size_value = 5.mb.value
+size_unit = 5.mb.unit
+size_to_bytes = 1.kb.toUnit("b")
+
+// DataSize arithmetic
+size_add = 1.gb + 512.mb
+size_mul = 256.mb * 4
+size_div = 1024.mb / 2
+size_sub = 2.gb - 512.mb
+size_compare = 1.gb > 512.mb
+size_compare_lt = 512.mb < 1.gb
+size_compare_eq = 1000.mb == 1.gb
+
+// Conversion examples
+size_conversion = new {
+  bytes = 1024.b
+  kilobytes = 1.kb
+  inBytes = 1.kb.toUnit("b")
+  inMb = 1024.kb.toUnit("mb")
+}
+
+duration_conversion = new {
+  seconds = 3600.s
+  minutes = 60.min
+  inMinutes = 1.h.toUnit("min")
+  inSeconds = 1.h.toUnit("s")
+}

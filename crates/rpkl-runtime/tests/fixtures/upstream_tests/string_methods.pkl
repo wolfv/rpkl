@@ -1,0 +1,89 @@
+// Comprehensive string method tests ported from apple/pkl test suite
+
+local str1 = "abcdefg"
+local str2 = "   hello world   "
+local str3 = "Hello, World!"
+
+// Basic properties
+test_length = str1.length
+test_isEmpty_empty = "".isEmpty
+test_isEmpty_nonempty = str1.isEmpty
+test_isBlank_empty = "".isBlank
+test_isBlank_whitespace = "   ".isBlank
+test_isBlank_content = str1.isBlank
+test_lastIndex = str1.lastIndex
+
+// Case conversion
+test_toUpperCase = str1.toUpperCase()
+test_toLowerCase = "ABCDEFG".toLowerCase()
+test_capitalize = "hello".capitalize()
+test_decapitalize = "Hello".decapitalize()
+
+// Trimming
+test_trim = str2.trim()
+test_trimStart = str2.trimStart()
+test_trimEnd = str2.trimEnd()
+
+// Character access
+test_chars = str1.chars
+test_chars_empty = "".chars
+
+// Substring operations
+test_take = str1.take(3)
+test_take_zero = str1.take(0)
+test_takeLast = str1.takeLast(3)
+test_drop = str1.drop(3)
+test_drop_zero = str1.drop(0)
+test_dropLast = str1.dropLast(3)
+test_substring = str1.substring(2, 5)
+
+// Search operations
+test_contains_true = str1.contains("cde")
+test_contains_false = str1.contains("xyz")
+test_startsWith_true = str1.startsWith("abc")
+test_startsWith_false = str1.startsWith("xyz")
+test_endsWith_true = str1.endsWith("efg")
+test_endsWith_false = str1.endsWith("xyz")
+test_indexOf = str1.indexOf("cde")
+test_indexOf_start = str1.indexOf("a")
+test_lastIndexOf = "abcabc".lastIndexOf("bc")
+
+// Split and join
+test_split = "a,b,c".split(",")
+test_split_complex = "one::two::three".split("::")
+
+// Replace operations
+test_replaceAll = "aabbcc".replaceAll("bb", "XX")
+test_replaceFirst = "aabbccbb".replaceFirst("bb", "XX")
+test_replaceLast = "aabbccbb".replaceLast("bb", "XX")
+
+// Repeat
+test_repeat = "ab".repeat(3)
+test_repeat_zero = "ab".repeat(0)
+
+// String interpolation tests
+local name = "PKL"
+local version = 1
+test_interpolation_basic = "Hello \(name)!"
+test_interpolation_expr = "Version: \(version + 1)"
+test_interpolation_nested = "Result: \(name.length * 2)"
+
+// Padding
+test_padStart = "42".padStart(5, "0")
+test_padEnd = "42".padEnd(5, "0")
+
+// Reverse
+test_reverse = "hello".reverse()
+
+// Type conversion
+test_toInt = "42".toInt()
+test_toInt_negative = "-123".toInt()
+test_toFloat = "3.14".toFloat()
+test_toBoolean_true = "true".toBoolean()
+test_toBoolean_false = "false".toBoolean()
+
+// Advanced: takeWhile and dropWhile
+test_takeWhile = str1.takeWhile((ch) -> ch < "d")
+test_dropWhile = str1.dropWhile((ch) -> ch < "d")
+test_takeLastWhile = str1.takeLastWhile((ch) -> ch > "d")
+test_dropLastWhile = str1.dropLastWhile((ch) -> ch > "d")

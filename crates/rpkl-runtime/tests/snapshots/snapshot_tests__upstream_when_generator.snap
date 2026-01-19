@@ -1,0 +1,30 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+expression: eval_pkl_file(&path)
+---
+{
+  "env": "production",
+  "requests": {
+    "cpu": 1,
+    "memory": "1gib"
+  },
+  "limits": {
+    "maxConnections": 1000,
+    "timeout": "30s"
+  },
+  "features": [
+    "base",
+    "monitoring",
+    "logging"
+  ],
+  "config": {
+    "name": "myapp",
+    "replicas": 3,
+    "highAvailability": true
+  },
+  "isProd": true,
+  "scalingConfig": {
+    "minReplicas": 2,
+    "maxReplicas": 10
+  }
+}

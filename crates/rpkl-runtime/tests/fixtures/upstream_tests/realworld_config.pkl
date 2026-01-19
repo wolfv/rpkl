@@ -1,0 +1,268 @@
+// Real-world configuration example
+// Simulates a microservices deployment configuration without external dependencies
+
+// ============================================================================
+// Type definitions
+// ============================================================================
+
+class Resource {
+  cpu: String
+  memory: String
+}
+
+class Resources {
+  requests: Resource
+  limits: Resource
+}
+
+class HealthCheck {
+  path: String
+  port: Int
+  initialDelaySeconds: Int = 10
+  periodSeconds: Int = 30
+}
+
+class EnvVar {
+  name: String
+  value: String
+}
+
+class Container {
+  name: String
+  image: String
+  ports: Listing<Int>
+  resources: Resources
+  env: Listing<EnvVar>
+  healthCheck: HealthCheck?
+}
+
+class Service {
+  name: String
+  replicas: Int
+  containers: Listing<Container>
+}
+
+class Environment {
+  name: String
+  region: String
+  isProd: Boolean
+  services: Listing<Service>
+}
+
+// ============================================================================
+// Common defaults
+// ============================================================================
+
+local defaultResources = new Resources {
+  requests = new Resource {
+    cpu = "100m"
+    memory = "128Mi"
+  }
+  limits = new Resource {
+    cpu = "500m"
+    memory = "512Mi"
+  }
+}
+
+local highResources = new Resources {
+  requests = new Resource {
+    cpu = "500m"
+    memory = "512Mi"
+  }
+  limits = new Resource {
+    cpu = "2000m"
+    memory = "2Gi"
+  }
+}
+
+// ============================================================================
+// Service definitions
+// ============================================================================
+
+local apiService = new Service {
+  name = "api-gateway"
+  replicas = 3
+  containers = new Listing {
+    new Container {
+      name = "api"
+      image = "myregistry/api:v2.1.0"
+      ports = new Listing { 8080; 8443 }
+      resources = highResources
+      env = new Listing {
+        new EnvVar { name = "LOG_LEVEL"; value = "info" }
+        new EnvVar { name = "MAX_CONNECTIONS"; value = "1000" }
+      }
+      healthCheck = new HealthCheck {
+        path = "/health"
+        port = 8080
+        initialDelaySeconds = 15
+      }
+    }
+  }
+}
+
+local authService = new Service {
+  name = "auth-service"
+  replicas = 2
+  containers = new Listing {
+    new Container {
+      name = "auth"
+      image = "myregistry/auth:v1.5.0"
+      ports = new Listing { 9000 }
+      resources = defaultResources
+      env = new Listing {
+        new EnvVar { name = "JWT_EXPIRY"; value = "3600" }
+        new EnvVar { name = "REDIS_HOST"; value = "redis-master" }
+      }
+      healthCheck = new HealthCheck {
+        path = "/ready"
+        port = 9000
+      }
+    }
+  }
+}
+
+local workerService = new Service {
+  name = "background-worker"
+  replicas = 5
+  containers = new Listing {
+    new Container {
+      name = "worker"
+      image = "myregistry/worker:v3.0.1"
+      ports = new Listing {}
+      resources = defaultResources
+      env = new Listing {
+        new EnvVar { name = "QUEUE_URL"; value = "amqp://rabbitmq:5672" }
+        new EnvVar { name = "CONCURRENCY"; value = "10" }
+      }
+      healthCheck = null
+    }
+  }
+}
+
+// ============================================================================
+// Environment configurations
+// ============================================================================
+
+staging = new Environment {
+  name = "staging"
+  region = "us-west-2"
+  isProd = false
+  services = new Listing {
+    (apiService) { replicas = 1 };
+    authService;
+    (workerService) { replicas = 2 }
+  }
+}
+
+production = new Environment {
+  name = "production"
+  region = "us-east-1"
+  isProd = true
+  services = new Listing {
+    apiService;
+    (authService) { replicas = 4 };
+    (workerService) { replicas = 10 }
+  }
+}
+
+// ============================================================================
+// Computed summaries
+// ============================================================================
+
+stagingServiceCount = staging.services.length
+productionServiceCount = production.services.length
+
+// TODO: Listing.map and Listing.fold need implementation
+// stagingTotalReplicas = staging.services
+//   .map((s) -> s.replicas)
+//   .fold(0, (acc, r) -> acc + r)
+
+// productionTotalReplicas = production.services
+//   .map((s) -> s.replicas)
+//   .fold(0, (acc, r) -> acc + r)
+
+// TODO: for-generator in listings
+// allServiceNames = new Listing {
+//   for (svc in staging.services) {
+//     svc.name
+//   }
+// }
+
+// ============================================================================
+// Feature flags and configuration
+// ============================================================================
+
+class FeatureFlag {
+  name: String
+  enabled: Boolean
+  rolloutPercentage: Int(this >= 0 && this <= 100)
+}
+
+featureFlags = new Listing<FeatureFlag> {
+  new FeatureFlag { name = "new-checkout"; enabled = true; rolloutPercentage = 50 }
+  new FeatureFlag { name = "dark-mode"; enabled = true; rolloutPercentage = 100 }
+  new FeatureFlag { name = "ai-recommendations"; enabled = false; rolloutPercentage = 0 }
+}
+
+// TODO: Listing.filter and Listing.map need implementation
+// enabledFeatures = featureFlags
+//   .filter((f) -> f.enabled)
+//   .map((f) -> f.name)
+
+// ============================================================================
+// Database configuration
+// ============================================================================
+
+class DatabaseConfig {
+  host: String
+  port: Int
+  database: String
+  maxConnections: Int = 100
+  sslEnabled: Boolean = true
+}
+
+databases = new Mapping<String, DatabaseConfig> {
+  ["primary"] = new DatabaseConfig {
+    host = "db-primary.internal"
+    port = 5432
+    database = "app_production"
+    maxConnections = 500
+  }
+  ["replica"] = new DatabaseConfig {
+    host = "db-replica.internal"
+    port = 5432
+    database = "app_production"
+    maxConnections = 200
+  }
+  ["analytics"] = new DatabaseConfig {
+    host = "db-analytics.internal"
+    port = 5432
+    database = "analytics"
+    maxConnections = 50
+    sslEnabled = false
+  }
+}
+
+// ============================================================================
+// Validation example
+// ============================================================================
+
+// TODO: Listing.every needs implementation
+// local function validateService(svc: Service): Boolean =
+//   svc.replicas > 0 && svc.containers.length > 0
+
+// allServicesValid = staging.services.every((s) -> validateService(s))
+//   && production.services.every((s) -> validateService(s))
+
+// ============================================================================
+// Output summary (simplified)
+// ============================================================================
+
+// TODO: Listing with references causes circular reference issue
+// summary = new {
+//   environments = new Listing { staging.name; production.name }
+//   stagingServiceCount = stagingServiceCount
+//   productionServiceCount = productionServiceCount
+//   totalDatabases = 3
+// }

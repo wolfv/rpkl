@@ -1,0 +1,415 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+expression: eval_pkl_file(&path)
+---
+{
+  "defaultResources": {
+    "requests": {
+      "cpu": "100m",
+      "memory": "128Mi"
+    },
+    "limits": {
+      "cpu": "500m",
+      "memory": "512Mi"
+    }
+  },
+  "highResources": {
+    "requests": {
+      "cpu": "500m",
+      "memory": "512Mi"
+    },
+    "limits": {
+      "cpu": "2000m",
+      "memory": "2Gi"
+    }
+  },
+  "apiService": {
+    "name": "api-gateway",
+    "replicas": 3,
+    "containers": [
+      {
+        "name": "api",
+        "image": "myregistry/api:v2.1.0",
+        "ports": [
+          8080,
+          8443
+        ],
+        "resources": {
+          "requests": {
+            "cpu": "500m",
+            "memory": "512Mi"
+          },
+          "limits": {
+            "cpu": "2000m",
+            "memory": "2Gi"
+          }
+        },
+        "env": [
+          {
+            "name": "LOG_LEVEL",
+            "value": "info"
+          },
+          {
+            "name": "MAX_CONNECTIONS",
+            "value": "1000"
+          }
+        ],
+        "healthCheck": {
+          "path": "/health",
+          "port": 8080,
+          "initialDelaySeconds": 15,
+          "periodSeconds": 30
+        }
+      }
+    ]
+  },
+  "authService": {
+    "name": "auth-service",
+    "replicas": 2,
+    "containers": [
+      {
+        "name": "auth",
+        "image": "myregistry/auth:v1.5.0",
+        "ports": [
+          9000
+        ],
+        "resources": {
+          "requests": {
+            "cpu": "100m",
+            "memory": "128Mi"
+          },
+          "limits": {
+            "cpu": "500m",
+            "memory": "512Mi"
+          }
+        },
+        "env": [
+          {
+            "name": "JWT_EXPIRY",
+            "value": "3600"
+          },
+          {
+            "name": "REDIS_HOST",
+            "value": "redis-master"
+          }
+        ],
+        "healthCheck": {
+          "path": "/ready",
+          "port": 9000,
+          "initialDelaySeconds": 10,
+          "periodSeconds": 30
+        }
+      }
+    ]
+  },
+  "workerService": {
+    "name": "background-worker",
+    "replicas": 5,
+    "containers": [
+      {
+        "name": "worker",
+        "image": "myregistry/worker:v3.0.1",
+        "ports": [],
+        "resources": {
+          "requests": {
+            "cpu": "100m",
+            "memory": "128Mi"
+          },
+          "limits": {
+            "cpu": "500m",
+            "memory": "512Mi"
+          }
+        },
+        "env": [
+          {
+            "name": "QUEUE_URL",
+            "value": "amqp://rabbitmq:5672"
+          },
+          {
+            "name": "CONCURRENCY",
+            "value": "10"
+          }
+        ],
+        "healthCheck": null
+      }
+    ]
+  },
+  "staging": {
+    "name": "staging",
+    "region": "us-west-2",
+    "isProd": false,
+    "services": [
+      {
+        "name": "api-gateway",
+        "replicas": 1,
+        "containers": [
+          {
+            "name": "api",
+            "image": "myregistry/api:v2.1.0",
+            "ports": [
+              8080,
+              8443
+            ],
+            "resources": {
+              "requests": {
+                "cpu": "500m",
+                "memory": "512Mi"
+              },
+              "limits": {
+                "cpu": "2000m",
+                "memory": "2Gi"
+              }
+            },
+            "env": [
+              {
+                "name": "LOG_LEVEL",
+                "value": "info"
+              },
+              {
+                "name": "MAX_CONNECTIONS",
+                "value": "1000"
+              }
+            ],
+            "healthCheck": {
+              "path": "/health",
+              "port": 8080,
+              "initialDelaySeconds": 15,
+              "periodSeconds": 30
+            }
+          }
+        ]
+      },
+      {
+        "name": "auth-service",
+        "replicas": 2,
+        "containers": [
+          {
+            "name": "auth",
+            "image": "myregistry/auth:v1.5.0",
+            "ports": [
+              9000
+            ],
+            "resources": {
+              "requests": {
+                "cpu": "100m",
+                "memory": "128Mi"
+              },
+              "limits": {
+                "cpu": "500m",
+                "memory": "512Mi"
+              }
+            },
+            "env": [
+              {
+                "name": "JWT_EXPIRY",
+                "value": "3600"
+              },
+              {
+                "name": "REDIS_HOST",
+                "value": "redis-master"
+              }
+            ],
+            "healthCheck": {
+              "path": "/ready",
+              "port": 9000,
+              "initialDelaySeconds": 10,
+              "periodSeconds": 30
+            }
+          }
+        ]
+      },
+      {
+        "name": "background-worker",
+        "replicas": 2,
+        "containers": [
+          {
+            "name": "worker",
+            "image": "myregistry/worker:v3.0.1",
+            "ports": [],
+            "resources": {
+              "requests": {
+                "cpu": "100m",
+                "memory": "128Mi"
+              },
+              "limits": {
+                "cpu": "500m",
+                "memory": "512Mi"
+              }
+            },
+            "env": [
+              {
+                "name": "QUEUE_URL",
+                "value": "amqp://rabbitmq:5672"
+              },
+              {
+                "name": "CONCURRENCY",
+                "value": "10"
+              }
+            ],
+            "healthCheck": null
+          }
+        ]
+      }
+    ]
+  },
+  "production": {
+    "name": "production",
+    "region": "us-east-1",
+    "isProd": true,
+    "services": [
+      {
+        "name": "api-gateway",
+        "replicas": 3,
+        "containers": [
+          {
+            "name": "api",
+            "image": "myregistry/api:v2.1.0",
+            "ports": [
+              8080,
+              8443
+            ],
+            "resources": {
+              "requests": {
+                "cpu": "500m",
+                "memory": "512Mi"
+              },
+              "limits": {
+                "cpu": "2000m",
+                "memory": "2Gi"
+              }
+            },
+            "env": [
+              {
+                "name": "LOG_LEVEL",
+                "value": "info"
+              },
+              {
+                "name": "MAX_CONNECTIONS",
+                "value": "1000"
+              }
+            ],
+            "healthCheck": {
+              "path": "/health",
+              "port": 8080,
+              "initialDelaySeconds": 15,
+              "periodSeconds": 30
+            }
+          }
+        ]
+      },
+      {
+        "name": "auth-service",
+        "replicas": 4,
+        "containers": [
+          {
+            "name": "auth",
+            "image": "myregistry/auth:v1.5.0",
+            "ports": [
+              9000
+            ],
+            "resources": {
+              "requests": {
+                "cpu": "100m",
+                "memory": "128Mi"
+              },
+              "limits": {
+                "cpu": "500m",
+                "memory": "512Mi"
+              }
+            },
+            "env": [
+              {
+                "name": "JWT_EXPIRY",
+                "value": "3600"
+              },
+              {
+                "name": "REDIS_HOST",
+                "value": "redis-master"
+              }
+            ],
+            "healthCheck": {
+              "path": "/ready",
+              "port": 9000,
+              "initialDelaySeconds": 10,
+              "periodSeconds": 30
+            }
+          }
+        ]
+      },
+      {
+        "name": "background-worker",
+        "replicas": 10,
+        "containers": [
+          {
+            "name": "worker",
+            "image": "myregistry/worker:v3.0.1",
+            "ports": [],
+            "resources": {
+              "requests": {
+                "cpu": "100m",
+                "memory": "128Mi"
+              },
+              "limits": {
+                "cpu": "500m",
+                "memory": "512Mi"
+              }
+            },
+            "env": [
+              {
+                "name": "QUEUE_URL",
+                "value": "amqp://rabbitmq:5672"
+              },
+              {
+                "name": "CONCURRENCY",
+                "value": "10"
+              }
+            ],
+            "healthCheck": null
+          }
+        ]
+      }
+    ]
+  },
+  "stagingServiceCount": 3,
+  "productionServiceCount": 3,
+  "featureFlags": [
+    {
+      "name": "new-checkout",
+      "enabled": true,
+      "rolloutPercentage": 50
+    },
+    {
+      "name": "dark-mode",
+      "enabled": true,
+      "rolloutPercentage": 100
+    },
+    {
+      "name": "ai-recommendations",
+      "enabled": false,
+      "rolloutPercentage": 0
+    }
+  ],
+  "databases": {
+    "primary": {
+      "host": "db-primary.internal",
+      "port": 5432,
+      "database": "app_production",
+      "maxConnections": 500,
+      "sslEnabled": true
+    },
+    "replica": {
+      "host": "db-replica.internal",
+      "port": 5432,
+      "database": "app_production",
+      "maxConnections": 200,
+      "sslEnabled": true
+    },
+    "analytics": {
+      "host": "db-analytics.internal",
+      "port": 5432,
+      "database": "analytics",
+      "maxConnections": 50,
+      "sslEnabled": false
+    }
+  }
+}

@@ -1,0 +1,220 @@
+// Comprehensive class and inheritance tests ported from apple/pkl test suite
+
+// Basic class definition
+class Person {
+  name: String
+  age: Int
+}
+
+// Class with methods
+class Rectangle {
+  width: Number
+  height: Number
+
+  function area(): Number = width * height
+  function perimeter(): Number = 2 * (width + height)
+}
+
+// Abstract class
+abstract class Animal {
+  name: String
+  abstract sound: String
+}
+
+// Class inheritance
+class Dog extends Animal {
+  sound = "woof"
+  breed: String
+}
+
+class Cat extends Animal {
+  sound = "meow"
+  indoor: Boolean
+}
+
+// Deep inheritance chain
+class Vehicle {
+  brand: String
+  year: Int
+}
+
+class Car extends Vehicle {
+  doors: Int
+}
+
+class SportsCar extends Car {
+  topSpeed: Int
+}
+
+// Class with default values
+class Config {
+  host: String = "localhost"
+  port: Int = 8080
+  debug: Boolean = false
+}
+
+// Test instances
+person1 = new Person {
+  name = "Alice"
+  age = 30
+}
+
+person2 = (person1) {
+  name = "Bob"
+}
+
+person3 = (person2) {
+  age = 25
+}
+
+rect1 = new Rectangle {
+  width = 10
+  height = 5
+}
+
+rect_area = rect1.area()
+rect_perimeter = rect1.perimeter()
+
+dog1 = new Dog {
+  name = "Buddy"
+  breed = "Golden Retriever"
+}
+
+dog_sound = dog1.sound
+
+cat1 = new Cat {
+  name = "Whiskers"
+  indoor = true
+}
+
+cat_sound = cat1.sound
+
+car1 = new SportsCar {
+  brand = "Ferrari"
+  year = 2023
+  doors = 2
+  topSpeed = 340
+}
+
+// Config with defaults
+config_default = new Config {}
+
+config_custom = new Config {
+  host = "api.example.com"
+  port = 443
+  debug = true
+}
+
+config_partial = new Config {
+  port = 9000
+}
+
+// Amending instances
+config_amended = (config_default) {
+  debug = true
+}
+
+// Class with constraints
+class PositiveInt {
+  value: Int(this >= 0)
+}
+
+class Adult {
+  name: String
+  age: Int(this >= 18)
+}
+
+positive1 = new PositiveInt { value = 42 }
+
+adult1 = new Adult {
+  name = "Charlie"
+  age = 21
+}
+
+// Nullable properties
+class Optional {
+  required: String
+  optional: String?
+}
+
+optional1 = new Optional {
+  required = "must have"
+  optional = null
+}
+
+optional2 = new Optional {
+  required = "must have"
+  optional = "also have"
+}
+
+// Class with computed properties
+class Circle {
+  radius: Number
+  diameter = radius * 2
+  area = 3.14159 * radius * radius
+  circumference = 2 * 3.14159 * radius
+}
+
+circle1 = new Circle {
+  radius = 5
+}
+
+circle_props = new {
+  r = circle1.radius
+  d = circle1.diameter
+  a = circle1.area
+  c = circle1.circumference
+}
+
+// Union types in class
+class Response {
+  status: Int
+  body: String|Int|Boolean
+}
+
+response_string = new Response {
+  status = 200
+  body = "OK"
+}
+
+response_int = new Response {
+  status = 200
+  body = 42
+}
+
+response_bool = new Response {
+  status = 200
+  body = true
+}
+
+// Listing in class
+class Team {
+  name: String
+  members: Listing<String>
+}
+
+team1 = new Team {
+  name = "Engineering"
+  members = new Listing {
+    "Alice"
+    "Bob"
+    "Charlie"
+  }
+}
+
+team_members_count = team1.members.length
+
+// Mapping in class
+class Database {
+  name: String
+  tables: Mapping<String, Int>
+}
+
+db1 = new Database {
+  name = "mydb"
+  tables = new Mapping {
+    ["users"] = 1000
+    ["orders"] = 5000
+    ["products"] = 200
+  }
+}
