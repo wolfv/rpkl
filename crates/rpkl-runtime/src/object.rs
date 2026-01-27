@@ -50,10 +50,20 @@ pub struct VmObject {
     pub scope: ScopeRef,
 }
 
+/// Metadata for an object member
+#[derive(Debug, Clone, Default)]
+pub struct MemberMetadata {
+    /// Whether this member is hidden (excluded from output)
+    pub is_hidden: bool,
+    /// Whether this member is local (not inherited)
+    pub is_local: bool,
+}
+
 /// An object member (lazily evaluated)
 #[derive(Debug)]
 pub struct ObjectMember {
     state: RefCell<MemberState>,
+    metadata: MemberMetadata,
 }
 
 #[derive(Debug, Clone)]
@@ -74,6 +84,19 @@ impl ObjectMember {
     pub fn new(expr: rpkl_parser::Expr, scope: ScopeRef) -> Self {
         Self {
             state: RefCell::new(MemberState::Unevaluated { expr, scope }),
+            metadata: MemberMetadata::default(),
+        }
+    }
+
+    /// Create a new unevaluated member with metadata
+    pub fn new_with_metadata(
+        expr: rpkl_parser::Expr,
+        scope: ScopeRef,
+        metadata: MemberMetadata,
+    ) -> Self {
+        Self {
+            state: RefCell::new(MemberState::Unevaluated { expr, scope }),
+            metadata,
         }
     }
 
@@ -81,7 +104,26 @@ impl ObjectMember {
     pub fn with_value(value: VmValue) -> Self {
         Self {
             state: RefCell::new(MemberState::Evaluated(value)),
+            metadata: MemberMetadata::default(),
         }
+    }
+
+    /// Create a member with a pre-evaluated value and metadata
+    pub fn with_value_and_metadata(value: VmValue, metadata: MemberMetadata) -> Self {
+        Self {
+            state: RefCell::new(MemberState::Evaluated(value)),
+            metadata,
+        }
+    }
+
+    /// Check if this member is hidden
+    pub fn is_hidden(&self) -> bool {
+        self.metadata.is_hidden
+    }
+
+    /// Get the metadata for this member
+    pub fn metadata(&self) -> &MemberMetadata {
+        &self.metadata
     }
 
     /// Check if this member is already evaluated
@@ -309,6 +351,37 @@ impl VmObject {
         names
     }
 
+    /// Iterate all visible (non-hidden) property names (including parent chain)
+    pub fn visible_property_names(&self) -> Vec<String> {
+        let mut names = Vec::new();
+        let mut hidden_names = Vec::new();
+
+        // Collect hidden names from local properties first
+        for (name, member) in self.properties.borrow().iter() {
+            if member.is_hidden() {
+                hidden_names.push(name.clone());
+            }
+        }
+
+        // Add parent visible properties first (respecting local hidden status)
+        if let Some(parent) = &self.parent {
+            for name in parent.visible_property_names() {
+                if !hidden_names.contains(&name) {
+                    names.push(name);
+                }
+            }
+        }
+
+        // Add/override with local visible properties
+        for (name, member) in self.properties.borrow().iter() {
+            if !member.is_hidden() && !names.contains(name) {
+                names.push(name.clone());
+            }
+        }
+
+        names
+    }
+
     /// Iterate all entry keys (including parent chain)
     pub fn entry_keys(&self) -> Vec<VmValue> {
         let mut keys = Vec::new();
@@ -378,7 +451,8 @@ impl Serialize for VmObject {
             }
             ObjectKind::Dynamic | ObjectKind::Typed(_) => {
                 // Serialize properties as object, but also include elements if present
-                let names = self.property_names();
+                // Use visible_property_names to filter out hidden properties
+                let names = self.visible_property_names();
                 let element_count = self.element_count();
                 let has_elements = element_count > 0;
                 let entry_count = self.entry_keys().len();

@@ -40,11 +40,28 @@ pub fn register(registry: &mut ExternalRegistry) {
     registry.register_method("List", "count", Arc::new(list_count));
     registry.register_method("List", "partition", Arc::new(list_partition));
     registry.register_method("List", "groupBy", Arc::new(list_group_by));
+    registry.register_method("List", "add", Arc::new(list_add));
+    registry.register_method("List", "replace", Arc::new(list_replace));
+    registry.register_method("List", "sort", Arc::new(list_sort));
+    registry.register_method("List", "sortBy", Arc::new(list_sort_by));
+    registry.register_method("List", "mapIndexed", Arc::new(list_map_indexed));
+    registry.register_method("List", "filterIndexed", Arc::new(list_filter_indexed));
+    registry.register_method("List", "foldIndexed", Arc::new(list_fold_indexed));
+    registry.register_method("List", "zip", Arc::new(list_zip));
+    registry.register_method("List", "minBy", Arc::new(list_min_by));
+    registry.register_method("List", "maxBy", Arc::new(list_max_by));
+    registry.register_method("List", "split", Arc::new(list_split));
+    registry.register_method("List", "findLast", Arc::new(list_find_last));
+    registry.register_method("List", "findIndex", Arc::new(list_find_index));
+    registry.register_method("List", "repeat", Arc::new(list_repeat));
+    registry.register_method("List", "toListing", Arc::new(list_to_listing));
+    registry.register_method("List", "toMap", Arc::new(list_to_map));
 
     // Map methods
     registry.register_method("Map", "containsKey", Arc::new(map_contains_key));
     registry.register_method("Map", "getOrNull", Arc::new(map_get_or_null));
     registry.register_method("Map", "toMap", Arc::new(map_to_map));
+    registry.register_method("Map", "remove", Arc::new(map_remove));
 
     // Map properties (accessed without parentheses)
     registry.register_property("Map", "entries", Arc::new(map_entries));
@@ -422,6 +439,24 @@ fn map_to_map(
 ) -> EvalResult<VmValue> {
     let this = get_map_arg(args, 0)?;
     Ok(VmValue::Map(this))
+}
+
+fn map_remove(
+    args: &[VmValue],
+    _eval: &rpkl_runtime::Evaluator,
+    _scope: &rpkl_runtime::ScopeRef,
+) -> EvalResult<VmValue> {
+    let this = get_map_arg(args, 0)?;
+    let key = args.get(1).ok_or(EvalError::WrongArgCount {
+        expected: 2,
+        actual: 1,
+    })?;
+
+    // Clone the map and remove the key
+    let mut new_map = (*this).clone();
+    new_map.shift_remove(key);
+
+    Ok(VmValue::Map(Arc::new(new_map)))
 }
 
 // Helper to call a lambda with arguments
@@ -915,4 +950,351 @@ fn listing_map(
     }
 
     Ok(VmValue::list(result))
+}
+
+// =============================================================================
+// Additional List methods
+// =============================================================================
+
+fn list_add(
+    args: &[VmValue],
+    _eval: &rpkl_runtime::Evaluator,
+    _scope: &rpkl_runtime::ScopeRef,
+) -> EvalResult<VmValue> {
+    let this = get_list_arg(args, 0)?;
+    let element = args.get(1).ok_or(EvalError::WrongArgCount {
+        expected: 2,
+        actual: 1,
+    })?;
+    let mut result: Vec<VmValue> = this.iter().cloned().collect();
+    result.push(element.clone());
+    Ok(VmValue::list(result))
+}
+
+fn list_replace(
+    args: &[VmValue],
+    _eval: &rpkl_runtime::Evaluator,
+    _scope: &rpkl_runtime::ScopeRef,
+) -> EvalResult<VmValue> {
+    let this = get_list_arg(args, 0)?;
+    let index = get_int_arg(args, 1)?;
+    let element = args.get(2).ok_or(EvalError::WrongArgCount {
+        expected: 3,
+        actual: 2,
+    })?;
+
+    if index < 0 || index as usize >= this.len() {
+        return Err(EvalError::IndexOutOfBounds {
+            index,
+            length: this.len(),
+        });
+    }
+
+    let mut result: Vec<VmValue> = this.iter().cloned().collect();
+    result[index as usize] = element.clone();
+    Ok(VmValue::list(result))
+}
+
+fn list_sort(
+    args: &[VmValue],
+    _eval: &rpkl_runtime::Evaluator,
+    _scope: &rpkl_runtime::ScopeRef,
+) -> EvalResult<VmValue> {
+    let this = get_list_arg(args, 0)?;
+    let mut result: Vec<VmValue> = this.iter().cloned().collect();
+
+    // Sort by comparing as floats for numbers, strings for strings
+    result.sort_by(|a, b| match (a.as_float(), b.as_float()) {
+        (Some(af), Some(bf)) => af.partial_cmp(&bf).unwrap_or(std::cmp::Ordering::Equal),
+        _ => match (a.as_string(), b.as_string()) {
+            (Some(as_), Some(bs)) => as_.cmp(bs),
+            _ => std::cmp::Ordering::Equal,
+        },
+    });
+
+    Ok(VmValue::list(result))
+}
+
+fn list_sort_by(
+    args: &[VmValue],
+    eval: &rpkl_runtime::Evaluator,
+    _scope: &rpkl_runtime::ScopeRef,
+) -> EvalResult<VmValue> {
+    let this = get_list_arg(args, 0)?;
+    let func = get_lambda_arg(args, 1)?;
+
+    // Compute keys for all elements
+    let mut keyed: Vec<(VmValue, VmValue)> = Vec::with_capacity(this.len());
+    for item in this.iter() {
+        let key = call_lambda(&func, vec![item.clone()], eval)?;
+        keyed.push((key, item.clone()));
+    }
+
+    // Sort by keys
+    keyed.sort_by(|(ka, _), (kb, _)| match (ka.as_float(), kb.as_float()) {
+        (Some(af), Some(bf)) => af.partial_cmp(&bf).unwrap_or(std::cmp::Ordering::Equal),
+        _ => match (ka.as_string(), kb.as_string()) {
+            (Some(as_), Some(bs)) => as_.cmp(bs),
+            _ => std::cmp::Ordering::Equal,
+        },
+    });
+
+    Ok(VmValue::list(keyed.into_iter().map(|(_, v)| v).collect()))
+}
+
+fn list_map_indexed(
+    args: &[VmValue],
+    eval: &rpkl_runtime::Evaluator,
+    _scope: &rpkl_runtime::ScopeRef,
+) -> EvalResult<VmValue> {
+    let this = get_list_arg(args, 0)?;
+    let func = get_lambda_arg(args, 1)?;
+
+    let mut result = Vec::with_capacity(this.len());
+    for (i, item) in this.iter().enumerate() {
+        let mapped = call_lambda(&func, vec![VmValue::Int(i as i64), item.clone()], eval)?;
+        result.push(mapped);
+    }
+    Ok(VmValue::list(result))
+}
+
+fn list_filter_indexed(
+    args: &[VmValue],
+    eval: &rpkl_runtime::Evaluator,
+    _scope: &rpkl_runtime::ScopeRef,
+) -> EvalResult<VmValue> {
+    let this = get_list_arg(args, 0)?;
+    let func = get_lambda_arg(args, 1)?;
+
+    let mut result = Vec::new();
+    for (i, item) in this.iter().enumerate() {
+        let keep = call_lambda(&func, vec![VmValue::Int(i as i64), item.clone()], eval)?;
+        if keep.is_truthy() {
+            result.push(item.clone());
+        }
+    }
+    Ok(VmValue::list(result))
+}
+
+fn list_fold_indexed(
+    args: &[VmValue],
+    eval: &rpkl_runtime::Evaluator,
+    _scope: &rpkl_runtime::ScopeRef,
+) -> EvalResult<VmValue> {
+    let this = get_list_arg(args, 0)?;
+    let initial = args.get(1).ok_or(EvalError::WrongArgCount {
+        expected: 3,
+        actual: args.len(),
+    })?;
+    let func = get_lambda_arg(args, 2)?;
+
+    let mut acc = initial.clone();
+    for (i, item) in this.iter().enumerate() {
+        acc = call_lambda(&func, vec![VmValue::Int(i as i64), acc, item.clone()], eval)?;
+    }
+    Ok(acc)
+}
+
+fn list_zip(
+    args: &[VmValue],
+    _eval: &rpkl_runtime::Evaluator,
+    _scope: &rpkl_runtime::ScopeRef,
+) -> EvalResult<VmValue> {
+    let this = get_list_arg(args, 0)?;
+    let other = get_list_arg(args, 1)?;
+
+    let result: Vec<VmValue> = this
+        .iter()
+        .zip(other.iter())
+        .map(|(a, b)| VmValue::Pair(Arc::new((a.clone(), b.clone()))))
+        .collect();
+
+    Ok(VmValue::list(result))
+}
+
+fn list_min_by(
+    args: &[VmValue],
+    eval: &rpkl_runtime::Evaluator,
+    _scope: &rpkl_runtime::ScopeRef,
+) -> EvalResult<VmValue> {
+    let this = get_list_arg(args, 0)?;
+    let func = get_lambda_arg(args, 1)?;
+
+    if this.is_empty() {
+        return Err(EvalError::InvalidOperation(
+            "Cannot get min of empty list".to_string(),
+        ));
+    }
+
+    let mut min_item = this[0].clone();
+    let mut min_key = call_lambda(&func, vec![min_item.clone()], eval)?;
+
+    for item in this.iter().skip(1) {
+        let key = call_lambda(&func, vec![item.clone()], eval)?;
+        let is_less = match (key.as_float(), min_key.as_float()) {
+            (Some(a), Some(b)) => a < b,
+            _ => match (key.as_string(), min_key.as_string()) {
+                (Some(a), Some(b)) => a < b,
+                _ => false,
+            },
+        };
+        if is_less {
+            min_item = item.clone();
+            min_key = key;
+        }
+    }
+
+    Ok(min_item)
+}
+
+fn list_max_by(
+    args: &[VmValue],
+    eval: &rpkl_runtime::Evaluator,
+    _scope: &rpkl_runtime::ScopeRef,
+) -> EvalResult<VmValue> {
+    let this = get_list_arg(args, 0)?;
+    let func = get_lambda_arg(args, 1)?;
+
+    if this.is_empty() {
+        return Err(EvalError::InvalidOperation(
+            "Cannot get max of empty list".to_string(),
+        ));
+    }
+
+    let mut max_item = this[0].clone();
+    let mut max_key = call_lambda(&func, vec![max_item.clone()], eval)?;
+
+    for item in this.iter().skip(1) {
+        let key = call_lambda(&func, vec![item.clone()], eval)?;
+        let is_greater = match (key.as_float(), max_key.as_float()) {
+            (Some(a), Some(b)) => a > b,
+            _ => match (key.as_string(), max_key.as_string()) {
+                (Some(a), Some(b)) => a > b,
+                _ => false,
+            },
+        };
+        if is_greater {
+            max_item = item.clone();
+            max_key = key;
+        }
+    }
+
+    Ok(max_item)
+}
+
+fn list_split(
+    args: &[VmValue],
+    _eval: &rpkl_runtime::Evaluator,
+    _scope: &rpkl_runtime::ScopeRef,
+) -> EvalResult<VmValue> {
+    let this = get_list_arg(args, 0)?;
+    let index = get_int_arg(args, 1)?;
+
+    if index < 0 || index as usize > this.len() {
+        return Err(EvalError::IndexOutOfBounds {
+            index,
+            length: this.len(),
+        });
+    }
+
+    let idx = index as usize;
+    let first = VmValue::list(this[..idx].to_vec());
+    let second = VmValue::list(this[idx..].to_vec());
+
+    Ok(VmValue::Pair(Arc::new((first, second))))
+}
+
+fn list_find_last(
+    args: &[VmValue],
+    eval: &rpkl_runtime::Evaluator,
+    _scope: &rpkl_runtime::ScopeRef,
+) -> EvalResult<VmValue> {
+    let this = get_list_arg(args, 0)?;
+    let func = get_lambda_arg(args, 1)?;
+
+    for item in this.iter().rev() {
+        let matches = call_lambda(&func, vec![item.clone()], eval)?;
+        if matches.is_truthy() {
+            return Ok(item.clone());
+        }
+    }
+
+    Err(EvalError::InvalidOperation(
+        "No element matches the predicate".to_string(),
+    ))
+}
+
+fn list_find_index(
+    args: &[VmValue],
+    eval: &rpkl_runtime::Evaluator,
+    _scope: &rpkl_runtime::ScopeRef,
+) -> EvalResult<VmValue> {
+    let this = get_list_arg(args, 0)?;
+    let func = get_lambda_arg(args, 1)?;
+
+    for (i, item) in this.iter().enumerate() {
+        let matches = call_lambda(&func, vec![item.clone()], eval)?;
+        if matches.is_truthy() {
+            return Ok(VmValue::Int(i as i64));
+        }
+    }
+
+    Ok(VmValue::Int(-1))
+}
+
+fn list_repeat(
+    args: &[VmValue],
+    _eval: &rpkl_runtime::Evaluator,
+    _scope: &rpkl_runtime::ScopeRef,
+) -> EvalResult<VmValue> {
+    let this = get_list_arg(args, 0)?;
+    let count = get_int_arg(args, 1)?;
+
+    if count < 0 {
+        return Err(EvalError::InvalidOperation(
+            "repeat count must be non-negative".to_string(),
+        ));
+    }
+
+    let mut result = Vec::with_capacity(this.len() * count as usize);
+    for _ in 0..count {
+        result.extend(this.iter().cloned());
+    }
+    Ok(VmValue::list(result))
+}
+
+fn list_to_listing(
+    args: &[VmValue],
+    _eval: &rpkl_runtime::Evaluator,
+    scope: &rpkl_runtime::ScopeRef,
+) -> EvalResult<VmValue> {
+    let this = get_list_arg(args, 0)?;
+
+    // Create a new Listing object
+    let obj = rpkl_runtime::VmObject::new_listing(Arc::clone(scope));
+
+    for item in this.iter() {
+        obj.add_element(rpkl_runtime::ObjectMember::with_value(item.clone()));
+    }
+
+    Ok(VmValue::Object(Arc::new(obj)))
+}
+
+fn list_to_map(
+    args: &[VmValue],
+    eval: &rpkl_runtime::Evaluator,
+    _scope: &rpkl_runtime::ScopeRef,
+) -> EvalResult<VmValue> {
+    let this = get_list_arg(args, 0)?;
+    let key_func = get_lambda_arg(args, 1)?;
+    let value_func = get_lambda_arg(args, 2)?;
+
+    let mut map = IndexMap::new();
+    for item in this.iter() {
+        let key = call_lambda(&key_func, vec![item.clone()], eval)?;
+        let value = call_lambda(&value_func, vec![item.clone()], eval)?;
+        map.insert(key, value);
+    }
+
+    Ok(VmValue::Map(Arc::new(map)))
 }

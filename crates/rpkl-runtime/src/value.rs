@@ -47,6 +47,20 @@ impl DurationUnit {
             DurationUnit::Days => "d",
         }
     }
+
+    /// Parse a duration unit from its suffix string
+    pub fn from_suffix(s: &str) -> Option<Self> {
+        match s {
+            "ns" => Some(DurationUnit::Nanoseconds),
+            "us" => Some(DurationUnit::Microseconds),
+            "ms" => Some(DurationUnit::Milliseconds),
+            "s" => Some(DurationUnit::Seconds),
+            "min" => Some(DurationUnit::Minutes),
+            "h" => Some(DurationUnit::Hours),
+            "d" => Some(DurationUnit::Days),
+            _ => None,
+        }
+    }
 }
 
 /// DataSize units
@@ -95,6 +109,24 @@ impl DataSizeUnit {
             DataSizeUnit::Gibibytes => "gib",
             DataSizeUnit::Tebibytes => "tib",
             DataSizeUnit::Pebibytes => "pib",
+        }
+    }
+
+    /// Parse a data size unit from its suffix string
+    pub fn from_suffix(s: &str) -> Option<Self> {
+        match s {
+            "b" => Some(DataSizeUnit::Bytes),
+            "kb" => Some(DataSizeUnit::Kilobytes),
+            "mb" => Some(DataSizeUnit::Megabytes),
+            "gb" => Some(DataSizeUnit::Gigabytes),
+            "tb" => Some(DataSizeUnit::Terabytes),
+            "pb" => Some(DataSizeUnit::Petabytes),
+            "kib" => Some(DataSizeUnit::Kibibytes),
+            "mib" => Some(DataSizeUnit::Mebibytes),
+            "gib" => Some(DataSizeUnit::Gibibytes),
+            "tib" => Some(DataSizeUnit::Tebibytes),
+            "pib" => Some(DataSizeUnit::Pebibytes),
+            _ => None,
         }
     }
 }
@@ -288,6 +320,14 @@ impl VmValue {
     pub fn as_object(&self) -> Option<&Arc<VmObject>> {
         match self {
             VmValue::Object(o) => Some(o),
+            _ => None,
+        }
+    }
+
+    /// Try to get as lambda closure
+    pub fn as_lambda(&self) -> Option<&Arc<LambdaClosure>> {
+        match self {
+            VmValue::Lambda(l) => Some(l),
             _ => None,
         }
     }

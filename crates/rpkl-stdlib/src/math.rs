@@ -5,28 +5,32 @@ use std::sync::Arc;
 use rpkl_runtime::{EvalError, EvalResult, ExternalRegistry, VmValue};
 
 pub fn register(registry: &mut ExternalRegistry) {
-    // Int methods
-    registry.register_method("Int", "abs", Arc::new(int_abs));
-    registry.register_method("Int", "sign", Arc::new(int_sign));
-    registry.register_method("Int", "isPositive", Arc::new(int_is_positive));
-    registry.register_method("Int", "isNegative", Arc::new(int_is_negative));
-    registry.register_method("Int", "isZero", Arc::new(int_is_zero));
-    registry.register_method("Int", "isNonZero", Arc::new(int_is_non_zero));
-    registry.register_method("Int", "isEven", Arc::new(int_is_even));
-    registry.register_method("Int", "isOdd", Arc::new(int_is_odd));
+    // Int properties (accessed without parentheses)
+    registry.register_property("Int", "abs", Arc::new(int_abs));
+    registry.register_property("Int", "sign", Arc::new(int_sign));
+    registry.register_property("Int", "isPositive", Arc::new(int_is_positive));
+    registry.register_property("Int", "isNegative", Arc::new(int_is_negative));
+    registry.register_property("Int", "isZero", Arc::new(int_is_zero));
+    registry.register_property("Int", "isNonZero", Arc::new(int_is_non_zero));
+    registry.register_property("Int", "isEven", Arc::new(int_is_even));
+    registry.register_property("Int", "isOdd", Arc::new(int_is_odd));
 
-    // Float methods
-    registry.register_method("Float", "abs", Arc::new(float_abs));
-    registry.register_method("Float", "sign", Arc::new(float_sign));
+    // Float properties (accessed without parentheses)
+    registry.register_property("Float", "abs", Arc::new(float_abs));
+    registry.register_property("Float", "sign", Arc::new(float_sign));
+    registry.register_property("Float", "isPositive", Arc::new(float_is_positive));
+    registry.register_property("Float", "isNegative", Arc::new(float_is_negative));
+    registry.register_property("Float", "isFinite", Arc::new(float_is_finite));
+    registry.register_property("Float", "isInfinite", Arc::new(float_is_infinite));
+    registry.register_property("Float", "isNaN", Arc::new(float_is_nan));
+    registry.register_property("Float", "isZero", Arc::new(float_is_zero));
+    registry.register_property("Float", "isNonZero", Arc::new(float_is_non_zero));
+
+    // Float methods (called with parentheses)
     registry.register_method("Float", "ceil", Arc::new(float_ceil));
     registry.register_method("Float", "floor", Arc::new(float_floor));
     registry.register_method("Float", "round", Arc::new(float_round));
     registry.register_method("Float", "truncate", Arc::new(float_truncate));
-    registry.register_method("Float", "isPositive", Arc::new(float_is_positive));
-    registry.register_method("Float", "isNegative", Arc::new(float_is_negative));
-    registry.register_method("Float", "isFinite", Arc::new(float_is_finite));
-    registry.register_method("Float", "isInfinite", Arc::new(float_is_infinite));
-    registry.register_method("Float", "isNaN", Arc::new(float_is_nan));
 
     // Trig and advanced math
     registry.register_method("Float", "sqrt", Arc::new(float_sqrt));
@@ -220,6 +224,24 @@ fn float_is_nan(
 ) -> EvalResult<VmValue> {
     let this = get_float_arg(args, 0)?;
     Ok(VmValue::Boolean(this.is_nan()))
+}
+
+fn float_is_zero(
+    args: &[VmValue],
+    _eval: &rpkl_runtime::Evaluator,
+    _scope: &rpkl_runtime::ScopeRef,
+) -> EvalResult<VmValue> {
+    let this = get_float_arg(args, 0)?;
+    Ok(VmValue::Boolean(this == 0.0))
+}
+
+fn float_is_non_zero(
+    args: &[VmValue],
+    _eval: &rpkl_runtime::Evaluator,
+    _scope: &rpkl_runtime::ScopeRef,
+) -> EvalResult<VmValue> {
+    let this = get_float_arg(args, 0)?;
+    Ok(VmValue::Boolean(this != 0.0))
 }
 
 fn float_sqrt(

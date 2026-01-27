@@ -217,7 +217,8 @@ fn render_pcf_value(value: &rpkl_runtime::VmValue, indent: usize) -> String {
             }
         }
         VmValue::Object(obj) => {
-            let names = obj.property_names();
+            // Use visible_property_names to filter out hidden properties
+            let names = obj.visible_property_names();
             let element_count = obj.element_count();
             let entry_keys = obj.entry_keys();
 

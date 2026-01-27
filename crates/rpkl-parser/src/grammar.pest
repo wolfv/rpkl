@@ -204,7 +204,7 @@ annotated_property = { annotation* ~ property }
 property = {
     property_modifier* ~ identifier ~ type_annotation_clause? ~ property_value?
 }
-property_modifier = { "local" | "hidden" | "fixed" | "const" | "external" }
+property_modifier = { "local" | "hidden" | "fixed" | "const" | "external" | "abstract" }
 type_annotation_clause = { ":" ~ type_annotation }
 property_value = { "=" ~ expression | object_body }
 
@@ -279,7 +279,7 @@ else_clause = { "else" ~ object_body }
 standalone_expression = { SOI ~ expression ~ EOI }
 
 // Expression entry point - handles operator precedence via precedence climbing
-expression = { prefix_expr ~ (binary_op ~ prefix_expr)* }
+expression = { type_check_expr ~ (binary_op ~ type_check_expr)* }
 
 // Binary operators - order matters for token matching (longer/more specific first)
 // Note: is/as are NOT binary operators - they are handled as postfix suffixes with type annotations
@@ -305,16 +305,19 @@ additive_op = { "+" | "-" }
 multiplicative_op = { "*" | "/" | "~/" | "%" }
 power_op = { "**" }
 
+// Type check expressions (is/as applied after prefix ops for correct precedence)
+// This ensures -5 is Int parses as (-5) is Int, not -(5 is Int)
+type_check_expr = { prefix_expr ~ type_check_suffix* }
+type_check_suffix = { is_suffix | as_suffix }
+
 // Prefix expressions
 prefix_expr = { prefix_op* ~ postfix_expr }
 prefix_op = { "!" | "-" }
 
-// Postfix expressions
+// Postfix expressions (member access, calls, etc.)
 postfix_expr = { primary_expr ~ postfix_suffix* }
 postfix_suffix = {
-    is_suffix
-    | as_suffix
-    | method_call_suffix
+    method_call_suffix
     | optional_member_access_suffix
     | member_access_suffix
     | subscript_suffix
@@ -376,7 +379,8 @@ read_expr = { ("read?" | "read") ~ "(" ~ expression ~ ")" }
 read_glob_expr = { "read*" ~ "(" ~ expression ~ ")" }
 
 // Object creation
-new_expr = { "new" ~ type_reference? ~ object_body }
+new_expr = { "new" ~ new_type? ~ object_body }
+new_type = { parameterized_type | type_reference }
 
 // Lambda expression
 lambda_expr = { lambda_params ~ "->" ~ expression }

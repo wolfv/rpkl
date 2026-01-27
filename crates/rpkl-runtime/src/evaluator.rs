@@ -10,7 +10,7 @@ use rpkl_parser::{
 
 use crate::error::{EvalError, EvalResult};
 use crate::loader::{LoadedModule, ModuleLoader};
-use crate::object::{ObjectKind, ObjectMember as ObjMember, VmObject};
+use crate::object::{MemberMetadata, ObjectKind, ObjectMember as ObjMember, VmObject};
 use crate::scope::{Scope, ScopeRef};
 use crate::value::{DataSizeUnit, DurationUnit, LambdaClosure, VmValue};
 
@@ -354,9 +354,16 @@ impl Evaluator {
     ) -> EvalResult<()> {
         let name = prop.name.node.clone();
 
+        // Create metadata from property modifiers
+        let metadata = MemberMetadata {
+            is_hidden: prop.modifiers.is_hidden,
+            is_local: prop.modifiers.is_local,
+        };
+
         match &prop.value {
             Some(PropertyValue::Expr(expr)) => {
-                let member = ObjMember::new(expr.clone(), Arc::clone(scope));
+                let member =
+                    ObjMember::new_with_metadata(expr.clone(), Arc::clone(scope), metadata);
                 obj.add_property(name, member);
             }
             Some(PropertyValue::Object(body)) => {
@@ -365,18 +372,18 @@ impl Evaluator {
                     // Amend the existing property from parent
                     let base_value = existing.force(|expr, scope| self.eval_expr(expr, scope))?;
                     let amended = self.eval_amendment(base_value, body, scope)?;
-                    let member = ObjMember::with_value(amended);
+                    let member = ObjMember::with_value_and_metadata(amended, metadata);
                     obj.add_property(name, member);
                 } else {
                     // Create new nested object
                     let nested = self.eval_object_body(body, scope)?;
-                    let member = ObjMember::with_value(nested);
+                    let member = ObjMember::with_value_and_metadata(nested, metadata);
                     obj.add_property(name, member);
                 }
             }
             None => {
                 // Property without value - will be undefined
-                let member = ObjMember::with_value(VmValue::Null);
+                let member = ObjMember::with_value_and_metadata(VmValue::Null, metadata);
                 obj.add_property(name, member);
             }
         }
@@ -769,7 +776,113 @@ impl Evaluator {
             }
         }
 
+        // Finally check builtin functions
+        if let Some(builtin) = Self::get_builtin_function(name) {
+            return Ok(builtin);
+        }
+
         Err(EvalError::undefined_var(name))
+    }
+
+    /// Get a builtin function by name
+    fn get_builtin_function(name: &str) -> Option<VmValue> {
+        match name {
+            "List" => Some(VmValue::ExternalFunc {
+                func: Arc::new(|args, _, _| Ok(VmValue::list(args.to_vec()))),
+                num_params: usize::MAX, // Variadic
+            }),
+            "Set" => Some(VmValue::ExternalFunc {
+                func: Arc::new(|args, _, _| {
+                    let set: indexmap::IndexSet<VmValue> = args.iter().cloned().collect();
+                    Ok(VmValue::Set(Arc::new(set)))
+                }),
+                num_params: usize::MAX, // Variadic
+            }),
+            "Map" => Some(VmValue::ExternalFunc {
+                func: Arc::new(|args, _, _| {
+                    // Map takes alternating key-value pairs
+                    if args.len() % 2 != 0 {
+                        return Err(EvalError::InvalidOperation(
+                            "Map() requires an even number of arguments (key-value pairs)"
+                                .to_string(),
+                        ));
+                    }
+                    let mut map = indexmap::IndexMap::new();
+                    for chunk in args.chunks(2) {
+                        map.insert(chunk[0].clone(), chunk[1].clone());
+                    }
+                    Ok(VmValue::Map(Arc::new(map)))
+                }),
+                num_params: usize::MAX, // Variadic
+            }),
+            "IntSeq" => Some(VmValue::ExternalFunc {
+                func: Arc::new(|args, _, _| {
+                    let start = args
+                        .first()
+                        .and_then(|v| v.as_int())
+                        .ok_or_else(|| EvalError::type_error("Int", "none"))?;
+                    let end = args
+                        .get(1)
+                        .and_then(|v| v.as_int())
+                        .ok_or_else(|| EvalError::type_error("Int", "none"))?;
+                    let step = args.get(2).and_then(|v| v.as_int()).unwrap_or(1);
+                    Ok(VmValue::IntSeq { start, end, step })
+                }),
+                num_params: usize::MAX, // 2-3 params
+            }),
+            "Pair" => Some(VmValue::ExternalFunc {
+                func: Arc::new(|args, _, _| {
+                    if args.len() != 2 {
+                        return Err(EvalError::WrongArgCount {
+                            expected: 2,
+                            actual: args.len(),
+                        });
+                    }
+                    Ok(VmValue::Pair(Arc::new((args[0].clone(), args[1].clone()))))
+                }),
+                num_params: 2,
+            }),
+            "Regex" => Some(VmValue::ExternalFunc {
+                func: Arc::new(|args, _, _| {
+                    if args.len() != 1 {
+                        return Err(EvalError::WrongArgCount {
+                            expected: 1,
+                            actual: args.len(),
+                        });
+                    }
+                    let pattern = args[0]
+                        .as_string()
+                        .ok_or_else(|| EvalError::type_error("String", args[0].type_name()))?;
+                    Ok(VmValue::Regex(Arc::new(crate::value::RegexValue {
+                        pattern: pattern.to_string(),
+                    })))
+                }),
+                num_params: 1,
+            }),
+            "Bytes" => Some(VmValue::ExternalFunc {
+                func: Arc::new(|args, _, _| {
+                    // Bytes takes integers and creates a byte array (represented as a List for now)
+                    let bytes: Result<Vec<VmValue>, _> = args
+                        .iter()
+                        .map(|v| {
+                            let i = v
+                                .as_int()
+                                .ok_or_else(|| EvalError::type_error("Int", v.type_name()))?;
+                            if !(0..=255).contains(&i) {
+                                return Err(EvalError::InvalidOperation(format!(
+                                    "Byte value must be 0-255, got {}",
+                                    i
+                                )));
+                            }
+                            Ok(VmValue::Int(i))
+                        })
+                        .collect();
+                    Ok(VmValue::list(bytes?))
+                }),
+                num_params: usize::MAX, // Variadic
+            }),
+            _ => None,
+        }
     }
 
     /// Evaluate member access
@@ -797,7 +910,9 @@ impl Evaluator {
                 match member {
                     "length" => Ok(VmValue::Int(s.chars().count() as i64)),
                     "isEmpty" => Ok(VmValue::Boolean(s.is_empty())),
+                    "isNotEmpty" => Ok(VmValue::Boolean(!s.is_empty())),
                     "isBlank" => Ok(VmValue::Boolean(s.trim().is_empty())),
+                    "isNotBlank" => Ok(VmValue::Boolean(!s.trim().is_empty())),
                     "lastIndex" => {
                         let len = s.chars().count();
                         if len == 0 {
@@ -806,12 +921,27 @@ impl Evaluator {
                             Ok(VmValue::Int(len as i64 - 1))
                         }
                     }
+                    "chars" => {
+                        // Return a List of single-character strings
+                        let chars: Vec<VmValue> = s
+                            .chars()
+                            .map(|c| VmValue::String(Arc::from(c.to_string())))
+                            .collect();
+                        Ok(VmValue::list(chars))
+                    }
+                    "codePoints" => {
+                        // Return a List of Unicode code points as integers
+                        let codepoints: Vec<VmValue> =
+                            s.chars().map(|c| VmValue::Int(c as i64)).collect();
+                        Ok(VmValue::list(codepoints))
+                    }
                     _ => Err(EvalError::undefined_prop(member)),
                 }
             }
             VmValue::List(l) => match member {
                 "length" => Ok(VmValue::Int(l.len() as i64)),
                 "isEmpty" => Ok(VmValue::Boolean(l.is_empty())),
+                "isNotEmpty" => Ok(VmValue::Boolean(!l.is_empty())),
                 "first" => l.first().cloned().ok_or(EvalError::IndexOutOfBounds {
                     index: 0,
                     length: 0,
@@ -820,11 +950,84 @@ impl Evaluator {
                     index: 0,
                     length: 0,
                 }),
+                "rest" => {
+                    if l.is_empty() {
+                        Ok(VmValue::list(vec![]))
+                    } else {
+                        Ok(VmValue::list(l[1..].to_vec()))
+                    }
+                }
+                "single" => {
+                    if l.len() == 1 {
+                        Ok(l[0].clone())
+                    } else {
+                        Err(EvalError::InvalidOperation(format!(
+                            "Expected list with single element, got {} elements",
+                            l.len()
+                        )))
+                    }
+                }
                 "lastIndex" => {
                     if l.is_empty() {
                         Ok(VmValue::Int(-1))
                     } else {
                         Ok(VmValue::Int(l.len() as i64 - 1))
+                    }
+                }
+                "distinct" => {
+                    // Remove duplicates preserving order
+                    let mut seen = std::collections::HashSet::new();
+                    let distinct: Vec<VmValue> = l
+                        .iter()
+                        .filter(|v| {
+                            let hash = format!("{:?}", v);
+                            seen.insert(hash)
+                        })
+                        .cloned()
+                        .collect();
+                    Ok(VmValue::list(distinct))
+                }
+                "isDistinct" => {
+                    let mut seen = std::collections::HashSet::new();
+                    let is_distinct = l.iter().all(|v| {
+                        let hash = format!("{:?}", v);
+                        seen.insert(hash)
+                    });
+                    Ok(VmValue::Boolean(is_distinct))
+                }
+                "min" => {
+                    if l.is_empty() {
+                        Err(EvalError::InvalidOperation(
+                            "Cannot get min of empty list".to_string(),
+                        ))
+                    } else {
+                        // For now, assume numeric comparison
+                        let mut min = l[0].clone();
+                        for v in l.iter().skip(1) {
+                            if let (Some(a), Some(b)) = (v.as_float(), min.as_float()) {
+                                if a < b {
+                                    min = v.clone();
+                                }
+                            }
+                        }
+                        Ok(min)
+                    }
+                }
+                "max" => {
+                    if l.is_empty() {
+                        Err(EvalError::InvalidOperation(
+                            "Cannot get max of empty list".to_string(),
+                        ))
+                    } else {
+                        let mut max = l[0].clone();
+                        for v in l.iter().skip(1) {
+                            if let (Some(a), Some(b)) = (v.as_float(), max.as_float()) {
+                                if a > b {
+                                    max = v.clone();
+                                }
+                            }
+                        }
+                        Ok(max)
                     }
                 }
                 _ => Err(EvalError::undefined_prop(member)),
@@ -921,6 +1124,22 @@ impl Evaluator {
                 "ceil" => Ok(VmValue::Float(f.ceil())),
                 "floor" => Ok(VmValue::Float(f.floor())),
                 "round" => Ok(VmValue::Float(f.round())),
+                _ => Err(EvalError::undefined_prop(member)),
+            },
+            VmValue::Duration { value, unit } => match member {
+                "value" => Ok(VmValue::Float(*value)),
+                "unit" => Ok(VmValue::String(Arc::from(unit.suffix()))),
+                "isPositive" => Ok(VmValue::Boolean(*value > 0.0)),
+                "isNegative" => Ok(VmValue::Boolean(*value < 0.0)),
+                "isZero" => Ok(VmValue::Boolean(*value == 0.0)),
+                _ => Err(EvalError::undefined_prop(member)),
+            },
+            VmValue::DataSize { value, unit } => match member {
+                "value" => Ok(VmValue::Float(*value)),
+                "unit" => Ok(VmValue::String(Arc::from(unit.suffix()))),
+                "isPositive" => Ok(VmValue::Boolean(*value > 0.0)),
+                "isNegative" => Ok(VmValue::Boolean(*value < 0.0)),
+                "isZero" => Ok(VmValue::Boolean(*value == 0.0)),
                 _ => Err(EvalError::undefined_prop(member)),
             },
             _ => Err(EvalError::InvalidOperation(format!(
@@ -1025,6 +1244,46 @@ impl Evaluator {
                 result.extend((**b).iter().cloned());
                 Ok(VmValue::list(result))
             }
+            // Duration + Duration
+            (
+                VmValue::Duration {
+                    value: v1,
+                    unit: u1,
+                },
+                VmValue::Duration {
+                    value: v2,
+                    unit: u2,
+                },
+            ) => {
+                // Convert both to nanoseconds, add, convert back to first unit
+                let ns1 = v1 * u1.to_nanos_factor();
+                let ns2 = v2 * u2.to_nanos_factor();
+                let result = (ns1 + ns2) / u1.to_nanos_factor();
+                Ok(VmValue::Duration {
+                    value: result,
+                    unit: *u1,
+                })
+            }
+            // DataSize + DataSize
+            (
+                VmValue::DataSize {
+                    value: v1,
+                    unit: u1,
+                },
+                VmValue::DataSize {
+                    value: v2,
+                    unit: u2,
+                },
+            ) => {
+                // Convert both to bytes, add, convert back to first unit
+                let b1 = v1 * u1.to_bytes_factor();
+                let b2 = v2 * u2.to_bytes_factor();
+                let result = (b1 + b2) / u1.to_bytes_factor();
+                Ok(VmValue::DataSize {
+                    value: result,
+                    unit: *u1,
+                })
+            }
             _ => Err(EvalError::type_error(
                 "numeric or string",
                 format!("{} and {}", l.type_name(), r.type_name()),
@@ -1038,6 +1297,44 @@ impl Evaluator {
             (VmValue::Float(a), VmValue::Float(b)) => Ok(VmValue::Float(a - b)),
             (VmValue::Int(a), VmValue::Float(b)) => Ok(VmValue::Float(*a as f64 - b)),
             (VmValue::Float(a), VmValue::Int(b)) => Ok(VmValue::Float(a - *b as f64)),
+            // Duration - Duration
+            (
+                VmValue::Duration {
+                    value: v1,
+                    unit: u1,
+                },
+                VmValue::Duration {
+                    value: v2,
+                    unit: u2,
+                },
+            ) => {
+                let ns1 = v1 * u1.to_nanos_factor();
+                let ns2 = v2 * u2.to_nanos_factor();
+                let result = (ns1 - ns2) / u1.to_nanos_factor();
+                Ok(VmValue::Duration {
+                    value: result,
+                    unit: *u1,
+                })
+            }
+            // DataSize - DataSize
+            (
+                VmValue::DataSize {
+                    value: v1,
+                    unit: u1,
+                },
+                VmValue::DataSize {
+                    value: v2,
+                    unit: u2,
+                },
+            ) => {
+                let b1 = v1 * u1.to_bytes_factor();
+                let b2 = v2 * u2.to_bytes_factor();
+                let result = (b1 - b2) / u1.to_bytes_factor();
+                Ok(VmValue::DataSize {
+                    value: result,
+                    unit: *u1,
+                })
+            }
             _ => Err(EvalError::type_error(
                 "numeric",
                 format!("{} and {}", l.type_name(), r.type_name()),
@@ -1054,6 +1351,42 @@ impl Evaluator {
             (VmValue::String(s), VmValue::Int(n)) | (VmValue::Int(n), VmValue::String(s)) => {
                 Ok(VmValue::string(s.repeat(*n as usize)))
             }
+            // Duration * Number
+            (VmValue::Duration { value, unit }, VmValue::Int(n)) => Ok(VmValue::Duration {
+                value: value * (*n as f64),
+                unit: *unit,
+            }),
+            (VmValue::Duration { value, unit }, VmValue::Float(n)) => Ok(VmValue::Duration {
+                value: value * n,
+                unit: *unit,
+            }),
+            // Number * Duration
+            (VmValue::Int(n), VmValue::Duration { value, unit }) => Ok(VmValue::Duration {
+                value: (*n as f64) * value,
+                unit: *unit,
+            }),
+            (VmValue::Float(n), VmValue::Duration { value, unit }) => Ok(VmValue::Duration {
+                value: n * value,
+                unit: *unit,
+            }),
+            // DataSize * Number
+            (VmValue::DataSize { value, unit }, VmValue::Int(n)) => Ok(VmValue::DataSize {
+                value: value * (*n as f64),
+                unit: *unit,
+            }),
+            (VmValue::DataSize { value, unit }, VmValue::Float(n)) => Ok(VmValue::DataSize {
+                value: value * n,
+                unit: *unit,
+            }),
+            // Number * DataSize
+            (VmValue::Int(n), VmValue::DataSize { value, unit }) => Ok(VmValue::DataSize {
+                value: (*n as f64) * value,
+                unit: *unit,
+            }),
+            (VmValue::Float(n), VmValue::DataSize { value, unit }) => Ok(VmValue::DataSize {
+                value: n * value,
+                unit: *unit,
+            }),
             _ => Err(EvalError::type_error(
                 "numeric",
                 format!("{} and {}", l.type_name(), r.type_name()),
@@ -1089,6 +1422,86 @@ impl Evaluator {
                     Err(EvalError::DivisionByZero)
                 } else {
                     Ok(VmValue::Float(a / *b as f64))
+                }
+            }
+            // Duration / Number
+            (VmValue::Duration { value, unit }, VmValue::Int(n)) => {
+                if *n == 0 {
+                    Err(EvalError::DivisionByZero)
+                } else {
+                    Ok(VmValue::Duration {
+                        value: value / (*n as f64),
+                        unit: *unit,
+                    })
+                }
+            }
+            (VmValue::Duration { value, unit }, VmValue::Float(n)) => {
+                if *n == 0.0 {
+                    Err(EvalError::DivisionByZero)
+                } else {
+                    Ok(VmValue::Duration {
+                        value: value / n,
+                        unit: *unit,
+                    })
+                }
+            }
+            // Duration / Duration returns a Float (ratio)
+            (
+                VmValue::Duration {
+                    value: v1,
+                    unit: u1,
+                },
+                VmValue::Duration {
+                    value: v2,
+                    unit: u2,
+                },
+            ) => {
+                let ns1 = v1 * u1.to_nanos_factor();
+                let ns2 = v2 * u2.to_nanos_factor();
+                if ns2 == 0.0 {
+                    Err(EvalError::DivisionByZero)
+                } else {
+                    Ok(VmValue::Float(ns1 / ns2))
+                }
+            }
+            // DataSize / Number
+            (VmValue::DataSize { value, unit }, VmValue::Int(n)) => {
+                if *n == 0 {
+                    Err(EvalError::DivisionByZero)
+                } else {
+                    Ok(VmValue::DataSize {
+                        value: value / (*n as f64),
+                        unit: *unit,
+                    })
+                }
+            }
+            (VmValue::DataSize { value, unit }, VmValue::Float(n)) => {
+                if *n == 0.0 {
+                    Err(EvalError::DivisionByZero)
+                } else {
+                    Ok(VmValue::DataSize {
+                        value: value / n,
+                        unit: *unit,
+                    })
+                }
+            }
+            // DataSize / DataSize returns a Float (ratio)
+            (
+                VmValue::DataSize {
+                    value: v1,
+                    unit: u1,
+                },
+                VmValue::DataSize {
+                    value: v2,
+                    unit: u2,
+                },
+            ) => {
+                let b1 = v1 * u1.to_bytes_factor();
+                let b2 = v2 * u2.to_bytes_factor();
+                if b2 == 0.0 {
+                    Err(EvalError::DivisionByZero)
+                } else {
+                    Ok(VmValue::Float(b1 / b2))
                 }
             }
             _ => Err(EvalError::type_error(
@@ -1279,7 +1692,8 @@ impl Evaluator {
                 self.eval_expr(&closure.body, &new_scope)
             }
             VmValue::ExternalFunc { func, num_params } => {
-                if args.len() != *num_params {
+                // usize::MAX indicates a variadic function
+                if *num_params != usize::MAX && args.len() != *num_params {
                     return Err(EvalError::WrongArgCount {
                         expected: *num_params,
                         actual: args.len(),
@@ -1353,23 +1767,32 @@ impl Evaluator {
             match member {
                 ClassMember::Property(prop) => {
                     let name = prop.name.node.clone();
+                    // Create metadata from property modifiers
+                    let metadata = MemberMetadata {
+                        is_hidden: prop.modifiers.is_hidden,
+                        is_local: prop.modifiers.is_local,
+                    };
                     if let Some(value) = &prop.value {
                         // Property has a default value
                         match value {
                             PropertyValue::Expr(expr) => {
-                                let m = ObjMember::new(expr.clone(), Arc::clone(scope));
+                                let m = ObjMember::new_with_metadata(
+                                    expr.clone(),
+                                    Arc::clone(scope),
+                                    metadata,
+                                );
                                 obj.add_property(name, m);
                             }
                             PropertyValue::Object(body) => {
                                 let nested = self.eval_object_body(body, scope)?;
-                                let m = ObjMember::with_value(nested);
+                                let m = ObjMember::with_value_and_metadata(nested, metadata);
                                 obj.add_property(name, m);
                             }
                         }
                     } else if prop.ty.is_some() {
                         // Property has type annotation but no default value
                         // Add it as null so methods can access it
-                        let m = ObjMember::with_value(VmValue::Null);
+                        let m = ObjMember::with_value_and_metadata(VmValue::Null, metadata);
                         obj.add_property(name, m);
                     }
                 }

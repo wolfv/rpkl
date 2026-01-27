@@ -214,6 +214,7 @@ pub struct PropertyModifiers {
     pub is_fixed: bool,
     pub is_const: bool,
     pub is_external: bool,
+    pub is_abstract: bool,
 }
 
 #[derive(Debug, Clone, PartialEq)]

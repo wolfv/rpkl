@@ -382,6 +382,7 @@ fn build_property(pair: Pair<Rule>, annotations: Vec<Annotation>) -> ParseResult
                 "fixed" => modifiers.is_fixed = true,
                 "const" => modifiers.is_const = true,
                 "external" => modifiers.is_external = true,
+                "abstract" => modifiers.is_abstract = true,
                 _ => {}
             },
             Rule::identifier => {
@@ -461,6 +462,7 @@ fn build_method(pair: Pair<Rule>, annotations: Vec<Annotation>) -> ParseResult<M
                 "fixed" => modifiers.is_fixed = true,
                 "const" => modifiers.is_const = true,
                 "external" => modifiers.is_external = true,
+                "abstract" => modifiers.is_abstract = true,
                 _ => {}
             },
             Rule::identifier => {
@@ -720,14 +722,14 @@ fn build_expression(pair: Pair<Rule>) -> ParseResult<Expr> {
 
     let mut inner = pair.into_inner();
     let first = inner.next().unwrap();
-    let left = build_prefix_expr(first)?;
+    let left = build_type_check_expr(first)?;
 
     // Collect all operators and operands
     let mut ops_and_exprs: Vec<(BinaryOp, Expr)> = Vec::new();
     while let Some(op_pair) = inner.next() {
         let op = parse_binary_op(&op_pair)?;
         let right_pair = inner.next().unwrap();
-        let right = build_prefix_expr(right_pair)?;
+        let right = build_type_check_expr(right_pair)?;
         ops_and_exprs.push((op, right));
     }
 
@@ -817,6 +819,53 @@ fn parse_binary_op(pair: &Pair<Rule>) -> ParseResult<BinaryOp> {
         _ => return Err(ParseError::UnknownOperator(op_str.to_string())),
     };
     Ok(op)
+}
+
+fn build_type_check_expr(pair: Pair<Rule>) -> ParseResult<Expr> {
+    debug_assert_eq!(pair.as_rule(), Rule::type_check_expr);
+
+    let mut inner = pair.into_inner();
+    let prefix_pair = inner.next().unwrap();
+    let mut expr = build_prefix_expr(prefix_pair)?;
+
+    // Apply type check suffixes (is/as)
+    for suffix in inner {
+        debug_assert_eq!(suffix.as_rule(), Rule::type_check_suffix);
+        let span = expr.span.merge(span_from_pair(&suffix));
+        let inner_suffix = suffix.into_inner().next().unwrap();
+
+        match inner_suffix.as_rule() {
+            Rule::is_suffix => {
+                // is_suffix = { is_keyword ~ type_annotation }
+                let mut parts = inner_suffix.into_inner();
+                let _ = parts.next(); // skip is_keyword
+                let ty = build_type_annotation(parts.next().unwrap())?;
+                expr = Expr {
+                    kind: ExprKind::Is {
+                        value: Box::new(expr),
+                        ty,
+                    },
+                    span,
+                };
+            }
+            Rule::as_suffix => {
+                // as_suffix = { as_keyword ~ type_annotation }
+                let mut parts = inner_suffix.into_inner();
+                let _ = parts.next(); // skip as_keyword
+                let ty = build_type_annotation(parts.next().unwrap())?;
+                expr = Expr {
+                    kind: ExprKind::As {
+                        value: Box::new(expr),
+                        ty,
+                    },
+                    span,
+                };
+            }
+            _ => unreachable!("unexpected type_check_suffix: {:?}", inner_suffix.as_rule()),
+        }
+    }
+
+    Ok(expr)
 }
 
 fn build_prefix_expr(pair: Pair<Rule>) -> ParseResult<Expr> {
@@ -943,32 +992,6 @@ fn apply_postfix_suffix(base: Expr, suffix: Pair<Rule>) -> ParseResult<Expr> {
                 kind: ExprKind::Amend {
                     base: Box::new(base),
                     body,
-                },
-                span,
-            })
-        }
-        Rule::is_suffix => {
-            // is_suffix = { is_keyword ~ type_annotation }
-            let mut parts = inner.into_inner();
-            let _ = parts.next(); // skip is_keyword
-            let ty = build_type_annotation(parts.next().unwrap())?;
-            Ok(Expr {
-                kind: ExprKind::Is {
-                    value: Box::new(base),
-                    ty,
-                },
-                span,
-            })
-        }
-        Rule::as_suffix => {
-            // as_suffix = { as_keyword ~ type_annotation }
-            let mut parts = inner.into_inner();
-            let _ = parts.next(); // skip as_keyword
-            let ty = build_type_annotation(parts.next().unwrap())?;
-            Ok(Expr {
-                kind: ExprKind::As {
-                    value: Box::new(base),
-                    ty,
                 },
                 span,
             })
@@ -1166,8 +1189,24 @@ fn build_new_expr(pair: Pair<Rule>) -> ParseResult<Expr> {
 
     for inner in pair.into_inner() {
         match inner.as_rule() {
-            Rule::type_reference => {
-                class_ref = Some(build_qualified_ident(inner.into_inner().next().unwrap())?);
+            Rule::new_type => {
+                // new_type can be parameterized_type or type_reference
+                let type_inner = inner.into_inner().next().unwrap();
+                match type_inner.as_rule() {
+                    Rule::parameterized_type => {
+                        // parameterized_type = { qualified_identifier ~ type_args }
+                        // For now, just use the qualified identifier, ignoring type args
+                        let qual_ident = type_inner.into_inner().next().unwrap();
+                        class_ref = Some(build_qualified_ident(qual_ident)?);
+                    }
+                    Rule::type_reference => {
+                        // type_reference = { qualified_identifier }
+                        class_ref = Some(build_qualified_ident(
+                            type_inner.into_inner().next().unwrap(),
+                        )?);
+                    }
+                    _ => {}
+                }
             }
             Rule::object_body => {
                 body = Some(build_object_body(inner)?);

@@ -37,6 +37,16 @@ pub fn register(registry: &mut ExternalRegistry) {
     registry.register_method("String", "padStart", Arc::new(string_pad_start));
     registry.register_method("String", "padEnd", Arc::new(string_pad_end));
     registry.register_method("String", "chars", Arc::new(string_chars));
+    registry.register_method("String", "toBoolean", Arc::new(string_to_boolean));
+    registry.register_method(
+        "String",
+        "toBooleanOrNull",
+        Arc::new(string_to_boolean_or_null),
+    );
+    registry.register_method("String", "takeWhile", Arc::new(string_take_while));
+    registry.register_method("String", "dropWhile", Arc::new(string_drop_while));
+    registry.register_method("String", "takeLastWhile", Arc::new(string_take_last_while));
+    registry.register_method("String", "dropLastWhile", Arc::new(string_drop_last_while));
 }
 
 fn get_string_arg(args: &[VmValue], idx: usize) -> EvalResult<Arc<str>> {
@@ -471,4 +481,140 @@ fn string_chars(
         .map(|c| VmValue::string(c.to_string()))
         .collect();
     Ok(VmValue::list(chars))
+}
+
+fn string_to_boolean(
+    args: &[VmValue],
+    _eval: &rpkl_runtime::Evaluator,
+    _scope: &rpkl_runtime::ScopeRef,
+) -> EvalResult<VmValue> {
+    let this = get_string_arg(args, 0)?;
+    match this.to_lowercase().as_str() {
+        "true" => Ok(VmValue::Boolean(true)),
+        "false" => Ok(VmValue::Boolean(false)),
+        _ => Err(EvalError::InvalidOperation(format!(
+            "Cannot parse '{}' as Boolean",
+            this
+        ))),
+    }
+}
+
+fn string_to_boolean_or_null(
+    args: &[VmValue],
+    _eval: &rpkl_runtime::Evaluator,
+    _scope: &rpkl_runtime::ScopeRef,
+) -> EvalResult<VmValue> {
+    let this = get_string_arg(args, 0)?;
+    match this.to_lowercase().as_str() {
+        "true" => Ok(VmValue::Boolean(true)),
+        "false" => Ok(VmValue::Boolean(false)),
+        _ => Ok(VmValue::Null),
+    }
+}
+
+fn string_take_while(
+    args: &[VmValue],
+    eval: &rpkl_runtime::Evaluator,
+    _scope: &rpkl_runtime::ScopeRef,
+) -> EvalResult<VmValue> {
+    let this = get_string_arg(args, 0)?;
+    let predicate = args
+        .get(1)
+        .and_then(|v| v.as_lambda())
+        .ok_or_else(|| EvalError::type_error("Function", "none"))?;
+
+    let mut result = String::new();
+    for c in this.chars() {
+        let char_str = VmValue::string(c.to_string());
+        let bindings = vec![(predicate.params[0].clone(), char_str)];
+        let lambda_scope = rpkl_runtime::Scope::for_lambda(&predicate.captured_scope, bindings);
+        let keep = eval.eval_expr(&predicate.body, &lambda_scope)?;
+        if keep.is_truthy() {
+            result.push(c);
+        } else {
+            break;
+        }
+    }
+    Ok(VmValue::string(result))
+}
+
+fn string_drop_while(
+    args: &[VmValue],
+    eval: &rpkl_runtime::Evaluator,
+    _scope: &rpkl_runtime::ScopeRef,
+) -> EvalResult<VmValue> {
+    let this = get_string_arg(args, 0)?;
+    let predicate = args
+        .get(1)
+        .and_then(|v| v.as_lambda())
+        .ok_or_else(|| EvalError::type_error("Function", "none"))?;
+
+    let chars: Vec<char> = this.chars().collect();
+    let mut start = 0;
+    for (i, c) in chars.iter().enumerate() {
+        let char_str = VmValue::string(c.to_string());
+        let bindings = vec![(predicate.params[0].clone(), char_str)];
+        let lambda_scope = rpkl_runtime::Scope::for_lambda(&predicate.captured_scope, bindings);
+        let drop = eval.eval_expr(&predicate.body, &lambda_scope)?;
+        if drop.is_truthy() {
+            start = i + 1;
+        } else {
+            break;
+        }
+    }
+    Ok(VmValue::string(chars[start..].iter().collect::<String>()))
+}
+
+fn string_take_last_while(
+    args: &[VmValue],
+    eval: &rpkl_runtime::Evaluator,
+    _scope: &rpkl_runtime::ScopeRef,
+) -> EvalResult<VmValue> {
+    let this = get_string_arg(args, 0)?;
+    let predicate = args
+        .get(1)
+        .and_then(|v| v.as_lambda())
+        .ok_or_else(|| EvalError::type_error("Function", "none"))?;
+
+    let chars: Vec<char> = this.chars().collect();
+    let mut end_idx = chars.len();
+    for c in chars.iter().rev() {
+        let char_str = VmValue::string(c.to_string());
+        let bindings = vec![(predicate.params[0].clone(), char_str)];
+        let lambda_scope = rpkl_runtime::Scope::for_lambda(&predicate.captured_scope, bindings);
+        let keep = eval.eval_expr(&predicate.body, &lambda_scope)?;
+        if keep.is_truthy() {
+            end_idx -= 1;
+        } else {
+            break;
+        }
+    }
+    Ok(VmValue::string(chars[end_idx..].iter().collect::<String>()))
+}
+
+fn string_drop_last_while(
+    args: &[VmValue],
+    eval: &rpkl_runtime::Evaluator,
+    _scope: &rpkl_runtime::ScopeRef,
+) -> EvalResult<VmValue> {
+    let this = get_string_arg(args, 0)?;
+    let predicate = args
+        .get(1)
+        .and_then(|v| v.as_lambda())
+        .ok_or_else(|| EvalError::type_error("Function", "none"))?;
+
+    let chars: Vec<char> = this.chars().collect();
+    let mut end = chars.len();
+    for c in chars.iter().rev() {
+        let char_str = VmValue::string(c.to_string());
+        let bindings = vec![(predicate.params[0].clone(), char_str)];
+        let lambda_scope = rpkl_runtime::Scope::for_lambda(&predicate.captured_scope, bindings);
+        let drop = eval.eval_expr(&predicate.body, &lambda_scope)?;
+        if drop.is_truthy() {
+            end -= 1;
+        } else {
+            break;
+        }
+    }
+    Ok(VmValue::string(chars[..end].iter().collect::<String>()))
 }

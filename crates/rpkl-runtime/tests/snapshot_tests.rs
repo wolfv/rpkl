@@ -967,64 +967,56 @@ fn test_extends_basic() {
 
 #[test]
 fn test_upstream_generators_comprehensive() {
-    let fixtures_dir =
-        concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures/upstream_tests");
+    let fixtures_dir = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures/upstream_tests");
     let path = format!("{}/generators_comprehensive.pkl", fixtures_dir);
     insta::assert_snapshot!(eval_pkl_file(&path));
 }
 
 #[test]
 fn test_upstream_string_methods() {
-    let fixtures_dir =
-        concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures/upstream_tests");
+    let fixtures_dir = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures/upstream_tests");
     let path = format!("{}/string_methods.pkl", fixtures_dir);
     insta::assert_snapshot!(eval_pkl_file(&path));
 }
 
 #[test]
 fn test_upstream_list_methods() {
-    let fixtures_dir =
-        concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures/upstream_tests");
+    let fixtures_dir = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures/upstream_tests");
     let path = format!("{}/list_methods.pkl", fixtures_dir);
     insta::assert_snapshot!(eval_pkl_file(&path));
 }
 
 #[test]
 fn test_upstream_classes_inheritance() {
-    let fixtures_dir =
-        concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures/upstream_tests");
+    let fixtures_dir = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures/upstream_tests");
     let path = format!("{}/classes_inheritance.pkl", fixtures_dir);
     insta::assert_snapshot!(eval_pkl_file(&path));
 }
 
 #[test]
 fn test_upstream_type_operators() {
-    let fixtures_dir =
-        concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures/upstream_tests");
+    let fixtures_dir = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures/upstream_tests");
     let path = format!("{}/type_operators.pkl", fixtures_dir);
     insta::assert_snapshot!(eval_pkl_file(&path));
 }
 
 #[test]
 fn test_upstream_numeric_methods() {
-    let fixtures_dir =
-        concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures/upstream_tests");
+    let fixtures_dir = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures/upstream_tests");
     let path = format!("{}/numeric_methods.pkl", fixtures_dir);
     insta::assert_snapshot!(eval_pkl_file(&path));
 }
 
 #[test]
 fn test_upstream_realworld_config() {
-    let fixtures_dir =
-        concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures/upstream_tests");
+    let fixtures_dir = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures/upstream_tests");
     let path = format!("{}/realworld_config.pkl", fixtures_dir);
     insta::assert_snapshot!(eval_pkl_file(&path));
 }
 
 #[test]
 fn test_upstream_when_generator() {
-    let fixtures_dir =
-        concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures/upstream_tests");
+    let fixtures_dir = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures/upstream_tests");
     let path = format!("{}/when_generator.pkl", fixtures_dir);
     insta::assert_snapshot!(eval_pkl_file(&path));
 }
