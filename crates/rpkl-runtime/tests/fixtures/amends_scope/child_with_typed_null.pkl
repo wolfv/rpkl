@@ -1,0 +1,8 @@
+/// Child module that amends a typed null property
+/// This should create an About object with class defaults applied
+amends "base_with_typed_null.pkl"
+
+about {
+  license = "MIT"
+  summary = "A test package"
+}

@@ -1,0 +1,13 @@
+/// Module that imports a class from another module and uses its methods
+/// This tests that class methods can access their defining module's scope
+import "utils_module.pkl"
+
+/// Create an instance of the imported class
+formatter = new utils_module.Formatter {
+  value = "test"
+}
+
+/// Call the method - it should access the prefix from utils_module
+output {
+  result = formatter.formatted()
+}

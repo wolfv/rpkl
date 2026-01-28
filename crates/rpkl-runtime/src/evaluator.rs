@@ -86,8 +86,8 @@ pub struct Evaluator {
     max_depth: usize,
     /// Current recursion depth
     depth: std::cell::Cell<usize>,
-    /// Class definitions by name
-    classes: std::cell::RefCell<std::collections::HashMap<String, Arc<ClassDef>>>,
+    /// Class definitions by name, along with the module scope where they were defined
+    classes: std::cell::RefCell<std::collections::HashMap<String, (Arc<ClassDef>, ScopeRef)>>,
 }
 
 impl Evaluator {
@@ -127,6 +127,23 @@ impl Evaluator {
     /// Set the base path for module loading
     pub fn set_base_path(&self, path: impl AsRef<Path>) {
         self.loader.borrow_mut().set_base_path(path);
+    }
+
+    /// Force all lazy members in a value (recursively for objects)
+    ///
+    /// This should be called before serializing a value to ensure all
+    /// lazy members are evaluated.
+    pub fn force_value(&self, value: &VmValue) -> EvalResult<()> {
+        if let VmValue::Object(obj) = value {
+            // For modules that amend other modules, use the module override
+            // so inherited properties see the current module's values
+            if obj.parent.is_some() {
+                self.force_object_with_module(obj, Some(obj))?;
+            } else {
+                self.force_object(obj)?;
+            }
+        }
+        Ok(())
     }
 
     /// Evaluate a module from a file path
@@ -282,11 +299,12 @@ impl Evaluator {
                     }
                 }
                 ModuleMember::Class(class) => {
-                    // Store class definition for later instantiation
+                    // Store class definition along with the module scope where it was defined
+                    // This ensures that class methods can access imports from their defining module
                     let name = class.name.node.clone();
                     self.classes
                         .borrow_mut()
-                        .insert(name, Arc::new(class.clone()));
+                        .insert(name, (Arc::new(class.clone()), Arc::clone(&module_scope)));
                 }
                 ModuleMember::TypeAlias(_) => {
                     // Type aliases don't produce runtime values
@@ -294,9 +312,9 @@ impl Evaluator {
             }
         }
 
-        // Force evaluation of all properties
-        self.force_object(&obj)?;
-
+        // Don't force properties here - defer to force_value which is called
+        // at the top level. This allows parent modules to have unset typed
+        // properties that are filled in by child modules.
         Ok(VmValue::Object(obj))
     }
 
@@ -354,10 +372,17 @@ impl Evaluator {
     ) -> EvalResult<()> {
         let name = prop.name.node.clone();
 
+        // Extract type hint from type annotation (for nullable typed properties)
+        let type_hint = prop
+            .ty
+            .as_ref()
+            .and_then(|ty| self.extract_base_type_name(ty));
+
         // Create metadata from property modifiers
         let metadata = MemberMetadata {
             is_hidden: prop.modifiers.is_hidden,
             is_local: prop.modifiers.is_local,
+            type_hint: type_hint.clone(),
         };
 
         match &prop.value {
@@ -370,14 +395,33 @@ impl Evaluator {
                 // Property with object body - check if we're amending an existing property
                 if let Some(existing) = obj.get_property_member(&name) {
                     // Amend the existing property from parent
+                    // We need to eagerly evaluate this to get the amended value,
+                    // because the base comes from the parent object
                     let base_value = existing.force(|expr, scope| self.eval_expr(expr, scope))?;
-                    let amended = self.eval_amendment(base_value, body, scope)?;
+                    // Get type hint from existing member if available
+                    let existing_type_hint = existing.metadata().type_hint.clone();
+                    let amended = self.eval_amendment_with_type_hint(
+                        base_value,
+                        body,
+                        scope,
+                        existing_type_hint,
+                    )?;
                     let member = ObjMember::with_value_and_metadata(amended, metadata);
                     obj.add_property(name, member);
                 } else {
-                    // Create new nested object
-                    let nested = self.eval_object_body(body, scope)?;
-                    let member = ObjMember::with_value_and_metadata(nested, metadata);
+                    // Create new nested object - store as lazy expression
+                    // This allows the object body to be evaluated later with the
+                    // correct scope context (important for amends where child
+                    // module properties should be visible)
+                    let new_expr = Expr {
+                        kind: ExprKind::New {
+                            class_ref: None,
+                            body: body.clone(),
+                        },
+                        span: prop.name.span.clone(),
+                    };
+                    let member =
+                        ObjMember::new_with_metadata(new_expr, Arc::clone(scope), metadata);
                     obj.add_property(name, member);
                 }
             }
@@ -441,7 +485,7 @@ impl Evaluator {
 
             // Object creation and amendment
             ExprKind::New { class_ref, body } => {
-                let (kind, class_def) = match class_ref {
+                let (kind, class_info) = match class_ref {
                     Some(name) => {
                         let type_name = name.to_string();
                         match type_name.as_str() {
@@ -450,7 +494,9 @@ impl Evaluator {
                             "Dynamic" => (ObjectKind::Dynamic, None),
                             _ => {
                                 // Look up class definition - try full name first, then just the class name
-                                let class =
+                                // Returns (ClassDef, ScopeRef) tuple where ScopeRef is the module scope
+                                // where the class was defined
+                                let class_info =
                                     self.classes.borrow().get(&type_name).cloned().or_else(|| {
                                         // For qualified names like Build.CMakeConfig, try just CMakeConfig
                                         if let Some(dot_pos) = type_name.rfind('.') {
@@ -460,13 +506,13 @@ impl Evaluator {
                                             None
                                         }
                                     });
-                                (ObjectKind::Typed(type_name), class)
+                                (ObjectKind::Typed(type_name), class_info)
                             }
                         }
                     }
                     None => (ObjectKind::Dynamic, None),
                 };
-                self.eval_new_object_with_class(kind, class_def.as_deref(), body, scope)
+                self.eval_new_object_with_class(kind, class_info, body, scope)
             }
             ExprKind::Amend { base, body } => {
                 let base_value = self.eval_expr(base, scope)?;
@@ -1717,10 +1763,14 @@ impl Evaluator {
     }
 
     /// Evaluate new object creation with optional class definition
+    ///
+    /// `class_info` contains both the class definition and the module scope where the class
+    /// was defined. This is important because class methods need access to imports from their
+    /// defining module, not the instantiation site.
     fn eval_new_object_with_class(
         &self,
         kind: ObjectKind,
-        class_def: Option<&ClassDef>,
+        class_info: Option<(Arc<ClassDef>, ScopeRef)>,
         body: &ObjectBody,
         scope: &ScopeRef,
     ) -> EvalResult<VmValue> {
@@ -1734,11 +1784,17 @@ impl Evaluator {
         let obj_scope = Scope::with_this(scope, Arc::clone(&obj));
 
         // First, apply class default properties if there's a class definition
-        if let Some(class) = class_def {
-            self.apply_class_defaults(&obj, class, &obj_scope)?;
+        // Use the class definition's module scope so methods can access imports from
+        // the module where the class was defined
+        if let Some((class_def, class_scope)) = &class_info {
+            // Create a scope that has the new object as `this` but uses the class
+            // definition's module for resolving imports
+            let class_obj_scope = Scope::with_this(class_scope, Arc::clone(&obj));
+            self.apply_class_defaults(&obj, class_def, &class_obj_scope)?;
         }
 
         // Then apply the body members (which can override class defaults)
+        // This uses the caller's scope so instantiation-site code can access local variables
         self.populate_object(&obj, body, &obj_scope)?;
         self.force_object(&obj)?;
 
@@ -1755,10 +1811,15 @@ impl Evaluator {
         use rpkl_parser::ClassMember;
 
         // If class extends another class, apply parent defaults first
+        // Use the parent class's module scope so its methods can access its imports
         if let Some(parent_name) = &class.extends {
             let parent_type_name = parent_name.to_string();
-            if let Some(parent_class) = self.classes.borrow().get(&parent_type_name).cloned() {
-                self.apply_class_defaults(obj, &parent_class, scope)?;
+            if let Some((parent_class, parent_scope)) =
+                self.classes.borrow().get(&parent_type_name).cloned()
+            {
+                // Create a scope with the parent's module but the new object as `this`
+                let parent_obj_scope = Scope::with_this(&parent_scope, Arc::clone(obj));
+                self.apply_class_defaults(obj, &parent_class, &parent_obj_scope)?;
             }
         }
 
@@ -1767,10 +1828,16 @@ impl Evaluator {
             match member {
                 ClassMember::Property(prop) => {
                     let name = prop.name.node.clone();
+                    // Extract type hint from type annotation
+                    let type_hint = prop
+                        .ty
+                        .as_ref()
+                        .and_then(|ty| self.extract_base_type_name(ty));
                     // Create metadata from property modifiers
                     let metadata = MemberMetadata {
                         is_hidden: prop.modifiers.is_hidden,
                         is_local: prop.modifiers.is_local,
+                        type_hint,
                     };
                     if let Some(value) = &prop.value {
                         // Property has a default value
@@ -1792,6 +1859,7 @@ impl Evaluator {
                     } else if prop.ty.is_some() {
                         // Property has type annotation but no default value
                         // Add it as null so methods can access it
+                        // The type_hint is already stored in metadata
                         let m = ObjMember::with_value_and_metadata(VmValue::Null, metadata);
                         obj.add_property(name, m);
                     }
@@ -1823,6 +1891,21 @@ impl Evaluator {
         body: &ObjectBody,
         scope: &ScopeRef,
     ) -> EvalResult<VmValue> {
+        self.eval_amendment_with_type_hint(base, body, scope, None)
+    }
+
+    /// Evaluate amendment with an optional type hint
+    ///
+    /// When amending a null value, if a type hint is provided, we'll create
+    /// an instance of that type with class defaults applied. This is important
+    /// for nullable typed properties like `about: Recipe.About?`.
+    fn eval_amendment_with_type_hint(
+        &self,
+        base: VmValue,
+        body: &ObjectBody,
+        scope: &ScopeRef,
+        type_hint: Option<String>,
+    ) -> EvalResult<VmValue> {
         match base {
             VmValue::Object(base_obj) => {
                 let amended = Arc::new(base_obj.amend(Arc::clone(scope)));
@@ -1834,9 +1917,40 @@ impl Evaluator {
                 Ok(VmValue::Object(amended))
             }
             VmValue::Null => {
-                // When amending null, create a new object instead
-                // This handles the case where a typed property has no default value
-                // Infer the object kind from the body contents
+                // When amending null, create a new object
+                // If we have a type hint and it's a known class, create a typed object
+                if let Some(type_name) = type_hint {
+                    // Try the full type name first, then try without module prefix
+                    // e.g., "Recipe.About" -> try "Recipe.About", then "About"
+                    let simple_name = type_name
+                        .rsplit('.')
+                        .next()
+                        .unwrap_or(&type_name)
+                        .to_string();
+
+                    // Check if this type is a known class
+                    let class_info = self
+                        .classes
+                        .borrow()
+                        .get(&type_name)
+                        .cloned()
+                        .or_else(|| self.classes.borrow().get(&simple_name).cloned());
+
+                    if let Some((class_def, class_scope)) = class_info {
+                        // Create a typed object with class defaults
+                        let new_obj = Arc::new(VmObject::new_typed(type_name, Arc::clone(scope)));
+                        let class_obj_scope = Scope::with_this(&class_scope, Arc::clone(&new_obj));
+                        self.apply_class_defaults(&new_obj, &class_def, &class_obj_scope)?;
+
+                        let obj_scope = Scope::with_this(scope, Arc::clone(&new_obj));
+                        self.populate_object(&new_obj, body, &obj_scope)?;
+                        self.force_object(&new_obj)?;
+
+                        return Ok(VmValue::Object(new_obj));
+                    }
+                }
+
+                // No type hint or unknown class - infer from body contents
                 let kind = self.infer_object_kind_from_body(body);
                 let new_obj = Arc::new(match kind {
                     ObjectKind::Listing => VmObject::new_listing(Arc::clone(scope)),
@@ -1851,6 +1965,21 @@ impl Evaluator {
                 Ok(VmValue::Object(new_obj))
             }
             _ => Err(EvalError::type_error("Object", base.type_name())),
+        }
+    }
+
+    /// Extract the base type name from a type annotation
+    ///
+    /// For nullable types like `Recipe.About?`, returns "Recipe.About".
+    /// For parameterized types, returns the base type.
+    /// For union types or other complex types, returns None.
+    fn extract_base_type_name(&self, ty: &rpkl_parser::TypeAnnotation) -> Option<String> {
+        use rpkl_parser::TypeKind;
+        match &ty.kind {
+            TypeKind::Named(name) => Some(name.to_string()),
+            TypeKind::Nullable(inner) => self.extract_base_type_name(inner),
+            TypeKind::Parameterized { base, .. } => Some(base.to_string()),
+            _ => None,
         }
     }
 
@@ -1883,7 +2012,10 @@ impl Evaluator {
                 // Amend existing property
                 if let Some(existing) = obj.get_property_member(&name.node) {
                     let base_value = existing.force(|expr, scope| self.eval_expr(expr, scope))?;
-                    let amended = self.eval_amendment(base_value, body, scope)?;
+                    // Get type hint from existing member if available
+                    let type_hint = existing.metadata().type_hint.clone();
+                    let amended =
+                        self.eval_amendment_with_type_hint(base_value, body, scope, type_hint)?;
                     let m = ObjMember::with_value(amended);
                     obj.add_property(name.node.clone(), m);
                 } else {
@@ -2062,24 +2194,63 @@ impl Evaluator {
 
     /// Force evaluation of all object members
     fn force_object(&self, obj: &Arc<VmObject>) -> EvalResult<()> {
+        self.force_object_with_module(obj, None)
+    }
+
+    /// Force evaluation of all object members with an optional module override
+    ///
+    /// When `module_override` is Some, inherited properties will be evaluated
+    /// with that module instead of their stored module. This is used when
+    /// evaluating inherited properties in an amended module.
+    fn force_object_with_module(
+        &self,
+        obj: &Arc<VmObject>,
+        module_override: Option<&Arc<VmObject>>,
+    ) -> EvalResult<()> {
         // Force all properties
         for name in obj.property_names() {
             if let Some(member) = obj.get_property_member(&name) {
-                member.force(|expr, scope| self.eval_expr(expr, scope))?;
+                let is_local = obj.has_local_property(&name);
+                let value = if is_local {
+                    // Local property - use stored scope
+                    member.force(|expr, scope| self.eval_expr(expr, scope))?
+                } else if let Some(module) = module_override {
+                    // Inherited property with module override
+                    member.force_with_module(Arc::clone(module), |expr, scope| {
+                        self.eval_expr(expr, scope)
+                    })?
+                } else {
+                    // Inherited property without override
+                    member.force(|expr, scope| self.eval_expr(expr, scope))?
+                };
+
+                // If the value is an object, recursively force its members.
+                // Pass the module override so nested objects also see the correct module.
+                if let VmValue::Object(nested_obj) = &value {
+                    self.force_object_with_module(nested_obj, module_override)?;
+                }
             }
         }
 
         // Force all elements
         for i in 0..obj.element_count() {
             if let Some(member) = obj.get_element_member(i) {
-                member.force(|expr, scope| self.eval_expr(expr, scope))?;
+                let value = member.force(|expr, scope| self.eval_expr(expr, scope))?;
+                // Recursively force nested objects with module override
+                if let VmValue::Object(nested_obj) = &value {
+                    self.force_object_with_module(nested_obj, module_override)?;
+                }
             }
         }
 
         // Force all entries
         for key in obj.entry_keys() {
             if let Some(member) = obj.get_entry_member(&key) {
-                member.force(|expr, scope| self.eval_expr(expr, scope))?;
+                let value = member.force(|expr, scope| self.eval_expr(expr, scope))?;
+                // Recursively force nested objects with module override
+                if let VmValue::Object(nested_obj) = &value {
+                    self.force_object_with_module(nested_obj, module_override)?;
+                }
             }
         }
 

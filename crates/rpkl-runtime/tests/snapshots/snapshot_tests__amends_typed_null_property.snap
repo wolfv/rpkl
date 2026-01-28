@@ -1,0 +1,16 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+expression: eval_pkl_file(&path)
+---
+{
+  "about": {
+    "homepage": null,
+    "license": "MIT",
+    "summary": "A test package"
+  },
+  "output": {
+    "has_about": true,
+    "about_homepage": null,
+    "about_license": "MIT"
+  }
+}

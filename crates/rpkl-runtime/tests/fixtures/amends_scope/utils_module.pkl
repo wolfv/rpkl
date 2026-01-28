@@ -1,0 +1,13 @@
+/// Utility module with a class that has a method referencing module-level values
+module Utils
+
+/// Module-level constant
+local prefix = "PREFIX"
+
+/// A class with a method that uses module-level values
+class Formatter {
+  value: String
+
+  /// This method references the module-level 'prefix' variable
+  function formatted() = "\(prefix): \(value)"
+}

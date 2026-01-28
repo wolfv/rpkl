@@ -1,0 +1,16 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+expression: eval_pkl_file(&path)
+---
+{
+  "utils_module": {
+    "prefix": "PREFIX"
+  },
+  "formatter": {
+    "value": "test",
+    "formatted": "<function>"
+  },
+  "output": {
+    "result": "PREFIX: test"
+  }
+}

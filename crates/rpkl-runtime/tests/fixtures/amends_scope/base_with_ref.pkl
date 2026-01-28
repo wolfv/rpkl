@@ -1,0 +1,16 @@
+/// Base module with inherited properties that reference other properties
+/// This tests that inherited properties see the child's overridden values
+
+class Package {
+  name: String
+  version: String
+}
+
+package: Package
+
+/// This property references package.name - when inherited, it should
+/// see the child's package, not the parent's null package
+output {
+  pkg_name = package.name
+  pkg_version = package.version
+}

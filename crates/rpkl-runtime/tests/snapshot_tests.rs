@@ -9,6 +9,7 @@ fn eval_pkl(source: &str) -> String {
     let registry = stdlib_registry();
     let evaluator = Evaluator::with_externals(registry);
     let result = evaluator.eval_module(&module).expect("Failed to evaluate");
+    evaluator.force_value(&result).expect("Failed to force");
     serde_json::to_string_pretty(&result).expect("Failed to serialize")
 }
 
@@ -20,7 +21,12 @@ fn eval_pkl_result(source: &str) -> String {
     let registry = stdlib_registry();
     let evaluator = Evaluator::with_externals(registry);
     match evaluator.eval_module(&module) {
-        Ok(result) => serde_json::to_string_pretty(&result).expect("Failed to serialize"),
+        Ok(result) => {
+            if let Err(e) = evaluator.force_value(&result) {
+                return format!("Force error: {}", e);
+            }
+            serde_json::to_string_pretty(&result).expect("Failed to serialize")
+        }
         Err(e) => format!("Eval error: {}", e),
     }
 }
@@ -644,7 +650,12 @@ fn eval_pkl_file(path: &str) -> String {
     let registry = stdlib_registry();
     let evaluator = Evaluator::with_externals(registry);
     match evaluator.eval_file(path) {
-        Ok(result) => serde_json::to_string_pretty(&result).expect("Failed to serialize"),
+        Ok(result) => {
+            if let Err(e) = evaluator.force_value(&result) {
+                return format!("Force error: {}", e);
+            }
+            serde_json::to_string_pretty(&result).expect("Failed to serialize")
+        }
         Err(e) => format!("Eval error: {}", e),
     }
 }
@@ -956,6 +967,39 @@ fn test_extends_basic() {
     // Test basic module extension (similar to amends but for type extension)
     let fixtures_dir = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures/inheritance");
     let path = format!("{}/server_config.pkl", fixtures_dir);
+    insta::assert_snapshot!(eval_pkl_file(&path));
+}
+
+// =============================================================================
+// Amends Scope Tests - Regression tests for scope handling in module amendments
+// =============================================================================
+
+#[test]
+fn test_amends_inherited_property_refs_child_values() {
+    // Test that inherited properties can reference the child's overridden values
+    // This was a bug where inherited output.pkg_name = package.name would fail
+    // because package was Null (from parent) instead of using child's package
+    let fixtures_dir = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures/amends_scope");
+    let path = format!("{}/child_with_ref.pkl", fixtures_dir);
+    insta::assert_snapshot!(eval_pkl_file(&path));
+}
+
+#[test]
+fn test_amends_typed_null_property() {
+    // Test that amending a typed null property (e.g., about: About?) creates
+    // a properly typed object with class defaults applied
+    // This was a bug where a Dynamic object was created instead
+    let fixtures_dir = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures/amends_scope");
+    let path = format!("{}/child_with_typed_null.pkl", fixtures_dir);
+    insta::assert_snapshot!(eval_pkl_file(&path));
+}
+
+#[test]
+fn test_class_method_accesses_module_imports() {
+    // Test that class methods can access imports/values from their defining module
+    // This was a bug where class methods captured the wrong scope
+    let fixtures_dir = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures/amends_scope");
+    let path = format!("{}/use_imported_class.pkl", fixtures_dir);
     insta::assert_snapshot!(eval_pkl_file(&path));
 }
 

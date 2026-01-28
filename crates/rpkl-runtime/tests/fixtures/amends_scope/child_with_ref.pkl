@@ -1,0 +1,8 @@
+/// Child module that amends base and provides package values
+/// The inherited output property should see these values
+amends "base_with_ref.pkl"
+
+package {
+  name = "test-package"
+  version = "1.2.3"
+}

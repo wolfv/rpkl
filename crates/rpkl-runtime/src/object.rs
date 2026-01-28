@@ -57,6 +57,9 @@ pub struct MemberMetadata {
     pub is_hidden: bool,
     /// Whether this member is local (not inherited)
     pub is_local: bool,
+    /// Type hint for nullable typed properties (e.g., "Recipe.About" for `about: Recipe.About?`)
+    /// Used when amending a null value to create the correct typed object
+    pub type_hint: Option<String>,
 }
 
 /// An object member (lazily evaluated)
@@ -75,7 +78,13 @@ enum MemberState {
     },
     /// Currently being evaluated (for cycle detection)
     Evaluating,
-    /// Already evaluated
+    /// Already evaluated, but keeps the original expression for re-evaluation
+    EvaluatedWithExpr {
+        value: VmValue,
+        expr: rpkl_parser::Expr,
+        scope: ScopeRef,
+    },
+    /// Already evaluated (no original expression available)
     Evaluated(VmValue),
 }
 
@@ -128,13 +137,17 @@ impl ObjectMember {
 
     /// Check if this member is already evaluated
     pub fn is_evaluated(&self) -> bool {
-        matches!(*self.state.borrow(), MemberState::Evaluated(_))
+        matches!(
+            *self.state.borrow(),
+            MemberState::Evaluated(_) | MemberState::EvaluatedWithExpr { .. }
+        )
     }
 
     /// Get the value if already evaluated
     pub fn get_if_evaluated(&self) -> Option<VmValue> {
         match &*self.state.borrow() {
             MemberState::Evaluated(v) => Some(v.clone()),
+            MemberState::EvaluatedWithExpr { value, .. } => Some(value.clone()),
             _ => None,
         }
     }
@@ -153,7 +166,50 @@ impl ObjectMember {
                 // Evaluate
                 let result = eval_fn(&expr, &scope)?;
 
-                // Store result
+                // Store result along with original expression for potential re-evaluation
+                *self.state.borrow_mut() = MemberState::EvaluatedWithExpr {
+                    value: result.clone(),
+                    expr,
+                    scope,
+                };
+                Ok(result)
+            }
+            MemberState::Evaluating => Err(crate::error::EvalError::CircularReference),
+            MemberState::EvaluatedWithExpr { value, .. } => Ok(value),
+            MemberState::Evaluated(v) => Ok(v),
+        }
+    }
+
+    /// Force evaluation with a module override
+    ///
+    /// This is used when evaluating inherited properties in an amended module.
+    /// The `module_override` replaces the module in the stored scope, allowing
+    /// the expression to see the amended module's properties.
+    ///
+    /// If the member was already evaluated with a different scope, it will be
+    /// re-evaluated with the new module override.
+    pub fn force_with_module<F>(
+        &self,
+        module_override: Arc<crate::object::VmObject>,
+        eval_fn: F,
+    ) -> EvalResult<VmValue>
+    where
+        F: FnOnce(&rpkl_parser::Expr, &ScopeRef) -> EvalResult<VmValue>,
+    {
+        let current = self.state.borrow().clone();
+        match current {
+            MemberState::Unevaluated { expr, scope }
+            | MemberState::EvaluatedWithExpr { expr, scope, .. } => {
+                // Mark as evaluating to detect cycles
+                *self.state.borrow_mut() = MemberState::Evaluating;
+
+                // Create a new scope with the module override
+                let new_scope = crate::scope::Scope::with_module_override(&scope, module_override);
+
+                // Evaluate with the overridden scope
+                let result = eval_fn(&expr, &new_scope)?;
+
+                // Store result (don't keep expr since we've overridden the scope)
                 *self.state.borrow_mut() = MemberState::Evaluated(result.clone());
                 Ok(result)
             }
@@ -278,6 +334,11 @@ impl VmObject {
             return parent.has_property(name);
         }
         false
+    }
+
+    /// Check if a property is local (not inherited from parent)
+    pub fn has_local_property(&self, name: &str) -> bool {
+        self.properties.borrow().contains_key(name)
     }
 
     /// Get a property member reference (shares state via Arc)

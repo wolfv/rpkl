@@ -1,0 +1,14 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+expression: eval_pkl_file(&path)
+---
+{
+  "package": {
+    "name": "test-package",
+    "version": "1.2.3"
+  },
+  "output": {
+    "pkg_name": "test-package",
+    "pkg_version": "1.2.3"
+  }
+}

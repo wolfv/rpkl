@@ -1,0 +1,22 @@
+/// Base module with a typed null property
+/// When the child amends this property, class defaults should be applied
+
+class About {
+  /// Homepage URL (should default to null)
+  homepage: String?
+  /// License identifier
+  license: String?
+  /// Short summary
+  summary: String?
+}
+
+/// Typed property with no default value - defaults to null
+about: About?
+
+/// This property accesses about.homepage which should work
+/// whether about is null or has been amended
+output {
+  has_about = about != null
+  about_homepage = about?.homepage
+  about_license = about?.license
+}

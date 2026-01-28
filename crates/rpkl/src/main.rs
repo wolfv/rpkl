@@ -98,6 +98,11 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
                 .eval_file(&file)
                 .map_err(|e| format!("Evaluation error: {}", e))?;
 
+            // Force all lazy members before serialization
+            evaluator
+                .force_value(&result)
+                .map_err(|e| format!("Evaluation error: {}", e))?;
+
             let output = match format {
                 OutputFormat::Json => {
                     if pretty {

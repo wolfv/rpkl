@@ -92,6 +92,21 @@ impl Scope {
         })
     }
 
+    /// Create a child scope with an overridden module object
+    ///
+    /// This is used when evaluating inherited properties in an amended module.
+    /// The inherited expression was captured with the parent module's scope, but
+    /// it should see the child module's properties when resolving identifiers.
+    pub fn with_module_override(parent: &ScopeRef, module: Arc<VmObject>) -> ScopeRef {
+        Arc::new(Self {
+            locals: HashMap::new(),
+            parent: Some(Arc::clone(parent)),
+            this_obj: Some(Arc::clone(&module)),
+            outer_obj: parent.outer_obj.clone(),
+            module_obj: Some(module),
+        })
+    }
+
     /// Resolve an identifier in this scope
     pub fn resolve(&self, name: &str) -> Option<VmValue> {
         // Check locals first
