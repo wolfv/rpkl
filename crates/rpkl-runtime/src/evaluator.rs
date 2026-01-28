@@ -418,7 +418,7 @@ impl Evaluator {
                             class_ref: None,
                             body: body.clone(),
                         },
-                        span: prop.name.span.clone(),
+                        span: prop.name.span,
                     };
                     let member =
                         ObjMember::new_with_metadata(new_expr, Arc::clone(scope), metadata);

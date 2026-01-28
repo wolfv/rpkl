@@ -166,7 +166,7 @@ fn int_to_radix_string(
         EvalError::type_error("Int", args.get(1).map_or("none", |v| v.type_name()))
     })?;
 
-    if radix < 2 || radix > 36 {
+    if !(2..=36).contains(&radix) {
         return Err(EvalError::InvalidOperation(format!(
             "radix must be between 2 and 36, got {}",
             radix
