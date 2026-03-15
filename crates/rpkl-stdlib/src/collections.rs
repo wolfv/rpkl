@@ -178,6 +178,30 @@ pub fn register(registry: &mut ExternalRegistry) {
     registry.register_method("List", "dropWhile", Arc::new(list_drop_while));
     registry.register_method("List", "takeLastWhile", Arc::new(list_take_last_while));
     registry.register_method("List", "dropLastWhile", Arc::new(list_drop_last_while));
+    registry.register_method("List", "foldBack", Arc::new(list_fold_back));
+    registry.register_method("List", "reduce", Arc::new(list_reduce));
+    registry.register_method("List", "filterNonNull", Arc::new(list_filter_non_null));
+    registry.register_method("List", "mapNonNull", Arc::new(list_map_non_null));
+    registry.register_method("List", "flatMapIndexed", Arc::new(list_flat_map_indexed));
+    registry.register_method("List", "sortWith", Arc::new(list_sort_with));
+    registry.register_method("List", "startsWith", Arc::new(list_starts_with));
+    registry.register_method("List", "endsWith", Arc::new(list_ends_with));
+    registry.register_property("List", "first", Arc::new(list_first));
+    registry.register_property("List", "rest", Arc::new(list_rest));
+    registry.register_property("List", "last", Arc::new(list_last));
+    registry.register_property("List", "isDistinct", Arc::new(list_is_distinct));
+    registry.register_method("List", "minWith", Arc::new(list_min_with));
+    registry.register_method("List", "maxWith", Arc::new(list_max_with));
+    registry.register_method("List", "findLastOrNull", Arc::new(list_find_last_or_null));
+
+    // Additional Set methods
+    registry.register_method("Set", "minWith", Arc::new(set_min_with));
+    registry.register_method("Set", "maxWith", Arc::new(set_max_with));
+    registry.register_method("Set", "filterIsInstance", Arc::new(set_filter_is_instance));
+
+    // Map additional conversion methods
+    registry.register_method("Map", "toDynamic", Arc::new(map_to_dynamic));
+    registry.register_method("Map", "toMapping", Arc::new(map_to_mapping));
 }
 
 fn get_list_arg(args: &[VmValue], idx: usize) -> EvalResult<Arc<Vec<VmValue>>> {
@@ -2906,4 +2930,395 @@ fn list_drop_last_while(
     let end = this.len() - count;
     let result: Vec<VmValue> = this[..end].iter().cloned().collect();
     Ok(VmValue::list(result))
+}
+
+fn list_fold_back(
+    args: &[VmValue],
+    eval: &rpkl_runtime::Evaluator,
+    _scope: &rpkl_runtime::ScopeRef,
+) -> EvalResult<VmValue> {
+    let this = get_list_arg(args, 0)?;
+    let mut acc = args[1].clone();
+    let func = get_lambda_arg(args, 2)?;
+    for v in this.iter().rev() {
+        acc = call_lambda(&func, vec![v.clone(), acc], eval)?;
+    }
+    Ok(acc)
+}
+
+fn list_reduce(
+    args: &[VmValue],
+    eval: &rpkl_runtime::Evaluator,
+    _scope: &rpkl_runtime::ScopeRef,
+) -> EvalResult<VmValue> {
+    let this = get_list_arg(args, 0)?;
+    let func = get_lambda_arg(args, 1)?;
+    if this.is_empty() {
+        return Err(EvalError::InvalidOperation("Cannot reduce empty List".to_string()));
+    }
+    let mut acc = this[0].clone();
+    for v in this.iter().skip(1) {
+        acc = call_lambda(&func, vec![acc, v.clone()], eval)?;
+    }
+    Ok(acc)
+}
+
+fn list_filter_non_null(
+    args: &[VmValue],
+    _eval: &rpkl_runtime::Evaluator,
+    _scope: &rpkl_runtime::ScopeRef,
+) -> EvalResult<VmValue> {
+    let this = get_list_arg(args, 0)?;
+    let result: Vec<VmValue> = this.iter().filter(|v| !v.is_null()).cloned().collect();
+    Ok(VmValue::list(result))
+}
+
+fn list_map_non_null(
+    args: &[VmValue],
+    eval: &rpkl_runtime::Evaluator,
+    _scope: &rpkl_runtime::ScopeRef,
+) -> EvalResult<VmValue> {
+    let this = get_list_arg(args, 0)?;
+    let func = get_lambda_arg(args, 1)?;
+    let mut result = Vec::new();
+    for v in this.iter() {
+        let mapped = call_lambda(&func, vec![v.clone()], eval)?;
+        if !mapped.is_null() {
+            result.push(mapped);
+        }
+    }
+    Ok(VmValue::list(result))
+}
+
+fn list_flat_map_indexed(
+    args: &[VmValue],
+    eval: &rpkl_runtime::Evaluator,
+    _scope: &rpkl_runtime::ScopeRef,
+) -> EvalResult<VmValue> {
+    let this = get_list_arg(args, 0)?;
+    let func = get_lambda_arg(args, 1)?;
+    let mut result = Vec::new();
+    for (i, v) in this.iter().enumerate() {
+        let mapped = call_lambda(&func, vec![VmValue::Int(i as i64), v.clone()], eval)?;
+        match mapped {
+            VmValue::List(l) => result.extend(l.iter().cloned()),
+            VmValue::Set(s) => result.extend(s.iter().cloned()),
+            _ => return Err(EvalError::type_error("Collection", mapped.type_name())),
+        }
+    }
+    Ok(VmValue::list(result))
+}
+
+fn list_sort_with(
+    args: &[VmValue],
+    eval: &rpkl_runtime::Evaluator,
+    _scope: &rpkl_runtime::ScopeRef,
+) -> EvalResult<VmValue> {
+    let this = get_list_arg(args, 0)?;
+    let func = get_lambda_arg(args, 1)?;
+    let mut items: Vec<VmValue> = this.iter().cloned().collect();
+    let mut error = None;
+    items.sort_by(|a, b| {
+        if error.is_some() {
+            return std::cmp::Ordering::Equal;
+        }
+        match call_lambda(&func, vec![a.clone(), b.clone()], eval) {
+            Ok(VmValue::Boolean(true)) => std::cmp::Ordering::Less,
+            Ok(VmValue::Boolean(false)) => {
+                match call_lambda(&func, vec![b.clone(), a.clone()], eval) {
+                    Ok(VmValue::Boolean(true)) => std::cmp::Ordering::Greater,
+                    _ => std::cmp::Ordering::Equal,
+                }
+            }
+            Ok(VmValue::Int(n)) => {
+                if n < 0 { std::cmp::Ordering::Less }
+                else if n > 0 { std::cmp::Ordering::Greater }
+                else { std::cmp::Ordering::Equal }
+            }
+            Ok(other) => {
+                error = Some(EvalError::type_error("Boolean", other.type_name()));
+                std::cmp::Ordering::Equal
+            }
+            Err(e) => {
+                error = Some(e);
+                std::cmp::Ordering::Equal
+            }
+        }
+    });
+    if let Some(e) = error {
+        return Err(e);
+    }
+    Ok(VmValue::list(items))
+}
+
+fn list_starts_with(
+    args: &[VmValue],
+    _eval: &rpkl_runtime::Evaluator,
+    _scope: &rpkl_runtime::ScopeRef,
+) -> EvalResult<VmValue> {
+    let this = get_list_arg(args, 0)?;
+    let prefix = get_list_arg(args, 1)?;
+    if prefix.len() > this.len() {
+        return Ok(VmValue::Boolean(false));
+    }
+    for (i, p) in prefix.iter().enumerate() {
+        if &this[i] != p {
+            return Ok(VmValue::Boolean(false));
+        }
+    }
+    Ok(VmValue::Boolean(true))
+}
+
+fn list_ends_with(
+    args: &[VmValue],
+    _eval: &rpkl_runtime::Evaluator,
+    _scope: &rpkl_runtime::ScopeRef,
+) -> EvalResult<VmValue> {
+    let this = get_list_arg(args, 0)?;
+    let suffix = get_list_arg(args, 1)?;
+    if suffix.len() > this.len() {
+        return Ok(VmValue::Boolean(false));
+    }
+    let offset = this.len() - suffix.len();
+    for (i, s) in suffix.iter().enumerate() {
+        if &this[offset + i] != s {
+            return Ok(VmValue::Boolean(false));
+        }
+    }
+    Ok(VmValue::Boolean(true))
+}
+
+fn list_first(
+    args: &[VmValue],
+    _eval: &rpkl_runtime::Evaluator,
+    _scope: &rpkl_runtime::ScopeRef,
+) -> EvalResult<VmValue> {
+    let this = get_list_arg(args, 0)?;
+    this.first().cloned().ok_or_else(|| {
+        EvalError::InvalidOperation("List is empty".to_string())
+    })
+}
+
+fn list_rest(
+    args: &[VmValue],
+    _eval: &rpkl_runtime::Evaluator,
+    _scope: &rpkl_runtime::ScopeRef,
+) -> EvalResult<VmValue> {
+    let this = get_list_arg(args, 0)?;
+    if this.is_empty() {
+        return Err(EvalError::InvalidOperation("List is empty".to_string()));
+    }
+    Ok(VmValue::list(this[1..].to_vec()))
+}
+
+fn list_last(
+    args: &[VmValue],
+    _eval: &rpkl_runtime::Evaluator,
+    _scope: &rpkl_runtime::ScopeRef,
+) -> EvalResult<VmValue> {
+    let this = get_list_arg(args, 0)?;
+    this.last().cloned().ok_or_else(|| {
+        EvalError::InvalidOperation("List is empty".to_string())
+    })
+}
+
+fn list_is_distinct(
+    args: &[VmValue],
+    _eval: &rpkl_runtime::Evaluator,
+    _scope: &rpkl_runtime::ScopeRef,
+) -> EvalResult<VmValue> {
+    let this = get_list_arg(args, 0)?;
+    let mut seen = IndexSet::new();
+    for v in this.iter() {
+        if !seen.insert(v.clone()) {
+            return Ok(VmValue::Boolean(false));
+        }
+    }
+    Ok(VmValue::Boolean(true))
+}
+
+fn list_min_with(
+    args: &[VmValue],
+    eval: &rpkl_runtime::Evaluator,
+    _scope: &rpkl_runtime::ScopeRef,
+) -> EvalResult<VmValue> {
+    let this = get_list_arg(args, 0)?;
+    let func = get_lambda_arg(args, 1)?;
+    if this.is_empty() {
+        return Err(EvalError::InvalidOperation("Cannot get minWith of empty List".to_string()));
+    }
+    let mut min_val = this[0].clone();
+    for v in this.iter().skip(1) {
+        let cmp = call_lambda(&func, vec![v.clone(), min_val.clone()], eval)?;
+        let is_less = match &cmp {
+            VmValue::Boolean(b) => *b,
+            VmValue::Int(n) => *n < 0,
+            _ => return Err(EvalError::type_error("Boolean", cmp.type_name())),
+        };
+        if is_less {
+            min_val = v.clone();
+        }
+    }
+    Ok(min_val)
+}
+
+fn list_max_with(
+    args: &[VmValue],
+    eval: &rpkl_runtime::Evaluator,
+    _scope: &rpkl_runtime::ScopeRef,
+) -> EvalResult<VmValue> {
+    let this = get_list_arg(args, 0)?;
+    let func = get_lambda_arg(args, 1)?;
+    if this.is_empty() {
+        return Err(EvalError::InvalidOperation("Cannot get maxWith of empty List".to_string()));
+    }
+    let mut max_val = this[0].clone();
+    for v in this.iter().skip(1) {
+        let cmp = call_lambda(&func, vec![max_val.clone(), v.clone()], eval)?;
+        let is_less = match &cmp {
+            VmValue::Boolean(b) => *b,
+            VmValue::Int(n) => *n < 0,
+            _ => return Err(EvalError::type_error("Boolean", cmp.type_name())),
+        };
+        if is_less {
+            max_val = v.clone();
+        }
+    }
+    Ok(max_val)
+}
+
+fn list_find_last_or_null(
+    args: &[VmValue],
+    eval: &rpkl_runtime::Evaluator,
+    _scope: &rpkl_runtime::ScopeRef,
+) -> EvalResult<VmValue> {
+    let this = get_list_arg(args, 0)?;
+    let func = get_lambda_arg(args, 1)?;
+    let mut last_match = None;
+    for v in this.iter() {
+        let result = call_lambda(&func, vec![v.clone()], eval)?;
+        if result.is_truthy() {
+            last_match = Some(v.clone());
+        }
+    }
+    Ok(last_match.unwrap_or(VmValue::Null))
+}
+
+// Set additional methods: minWith, maxWith, filterIsInstance
+
+fn set_min_with(
+    args: &[VmValue],
+    eval: &rpkl_runtime::Evaluator,
+    _scope: &rpkl_runtime::ScopeRef,
+) -> EvalResult<VmValue> {
+    let this = get_set_arg(args, 0)?;
+    let func = get_lambda_arg(args, 1)?;
+    if this.is_empty() {
+        return Err(EvalError::InvalidOperation("Cannot get minWith of empty Set".to_string()));
+    }
+    let mut min_val = this.iter().next().unwrap().clone();
+    for v in this.iter().skip(1) {
+        let cmp = call_lambda(&func, vec![v.clone(), min_val.clone()], eval)?;
+        let is_less = match &cmp {
+            VmValue::Boolean(b) => *b,
+            VmValue::Int(n) => *n < 0,
+            _ => return Err(EvalError::type_error("Boolean", cmp.type_name())),
+        };
+        if is_less {
+            min_val = v.clone();
+        }
+    }
+    Ok(min_val)
+}
+
+fn set_max_with(
+    args: &[VmValue],
+    eval: &rpkl_runtime::Evaluator,
+    _scope: &rpkl_runtime::ScopeRef,
+) -> EvalResult<VmValue> {
+    let this = get_set_arg(args, 0)?;
+    let func = get_lambda_arg(args, 1)?;
+    if this.is_empty() {
+        return Err(EvalError::InvalidOperation("Cannot get maxWith of empty Set".to_string()));
+    }
+    let mut max_val = this.iter().next().unwrap().clone();
+    for v in this.iter().skip(1) {
+        let cmp = call_lambda(&func, vec![max_val.clone(), v.clone()], eval)?;
+        let is_less = match &cmp {
+            VmValue::Boolean(b) => *b,
+            VmValue::Int(n) => *n < 0,
+            _ => return Err(EvalError::type_error("Boolean", cmp.type_name())),
+        };
+        if is_less {
+            max_val = v.clone();
+        }
+    }
+    Ok(max_val)
+}
+
+fn set_filter_is_instance(
+    args: &[VmValue],
+    _eval: &rpkl_runtime::Evaluator,
+    _scope: &rpkl_runtime::ScopeRef,
+) -> EvalResult<VmValue> {
+    let this = get_set_arg(args, 0)?;
+    let type_name = args.get(1).and_then(|v| v.as_string()).ok_or_else(|| {
+        EvalError::type_error("String", args.get(1).map_or("none", |v| v.type_name()))
+    })?;
+
+    let result: IndexSet<VmValue> = this.iter().filter(|v| {
+        match type_name {
+            "Any" => true,
+            "Int" => matches!(v, VmValue::Int(_)),
+            "Float" => matches!(v, VmValue::Float(_)),
+            "Number" => matches!(v, VmValue::Int(_) | VmValue::Float(_)),
+            "String" => matches!(v, VmValue::String(_)),
+            "Boolean" => matches!(v, VmValue::Boolean(_)),
+            "Null" => matches!(v, VmValue::Null),
+            _ => v.type_name() == type_name,
+        }
+    }).cloned().collect();
+    Ok(VmValue::Set(Arc::new(result)))
+}
+
+// Map conversion methods
+
+fn map_to_dynamic(
+    args: &[VmValue],
+    _eval: &rpkl_runtime::Evaluator,
+    _scope: &rpkl_runtime::ScopeRef,
+) -> EvalResult<VmValue> {
+    let this = get_map_arg(args, 0)?;
+    let obj = rpkl_runtime::object::VmObject::new_dynamic(rpkl_runtime::Scope::new());
+    for (k, v) in this.iter() {
+        if let VmValue::String(s) = k {
+            // Dynamic objects use properties for string keys
+            obj.add_property(
+                s.to_string().into(),
+                rpkl_runtime::ObjectMember::with_value(v.clone()),
+            );
+        } else {
+            obj.add_entry(
+                k.clone(),
+                rpkl_runtime::ObjectMember::with_value(v.clone()),
+            );
+        }
+    }
+    Ok(VmValue::Object(Arc::new(obj)))
+}
+
+fn map_to_mapping(
+    args: &[VmValue],
+    _eval: &rpkl_runtime::Evaluator,
+    _scope: &rpkl_runtime::ScopeRef,
+) -> EvalResult<VmValue> {
+    let this = get_map_arg(args, 0)?;
+    let obj = rpkl_runtime::object::VmObject::new_mapping(rpkl_runtime::Scope::new());
+    for (k, v) in this.iter() {
+        obj.add_entry(
+            k.clone(),
+            rpkl_runtime::ObjectMember::with_value(v.clone()),
+        );
+    }
+    Ok(VmValue::Object(Arc::new(obj)))
 }

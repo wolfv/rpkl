@@ -1,0 +1,15 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+expression: eval_pkl(source)
+---
+{
+  "s": [
+    3,
+    1,
+    4,
+    5,
+    2
+  ],
+  "r1": 1,
+  "r2": 5
+}

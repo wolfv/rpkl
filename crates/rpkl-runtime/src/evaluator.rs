@@ -318,6 +318,40 @@ impl Evaluator {
         Ok(VmValue::Object(obj))
     }
 
+    /// Create a built-in pkl: standard library module
+    fn create_stdlib_module(&self, module_name: &str) -> EvalResult<VmValue> {
+        use crate::object::VmObject;
+        use crate::scope::Scope;
+        match module_name {
+            "math" => {
+                let obj = VmObject::new_dynamic(Scope::new());
+                obj.add_property("pi".into(), ObjMember::with_value(VmValue::Float(std::f64::consts::PI)));
+                obj.add_property("e".into(), ObjMember::with_value(VmValue::Float(std::f64::consts::E)));
+                obj.add_property("maxInt".into(), ObjMember::with_value(VmValue::Int(i64::MAX)));
+                obj.add_property("minInt".into(), ObjMember::with_value(VmValue::Int(i64::MIN)));
+                obj.add_property("maxFiniteFloat".into(), ObjMember::with_value(VmValue::Float(f64::MAX)));
+                obj.add_property("minFiniteFloat".into(), ObjMember::with_value(VmValue::Float(f64::MIN)));
+                obj.add_property("maxInt8".into(), ObjMember::with_value(VmValue::Int(i8::MAX as i64)));
+                obj.add_property("minInt8".into(), ObjMember::with_value(VmValue::Int(i8::MIN as i64)));
+                obj.add_property("maxInt16".into(), ObjMember::with_value(VmValue::Int(i16::MAX as i64)));
+                obj.add_property("minInt16".into(), ObjMember::with_value(VmValue::Int(i16::MIN as i64)));
+                obj.add_property("maxInt32".into(), ObjMember::with_value(VmValue::Int(i32::MAX as i64)));
+                obj.add_property("minInt32".into(), ObjMember::with_value(VmValue::Int(i32::MIN as i64)));
+                obj.add_property("maxUInt8".into(), ObjMember::with_value(VmValue::Int(u8::MAX as i64)));
+                obj.add_property("maxUInt16".into(), ObjMember::with_value(VmValue::Int(u16::MAX as i64)));
+                obj.add_property("maxUInt32".into(), ObjMember::with_value(VmValue::Int(u32::MAX as i64)));
+                obj.add_property("maxUInt".into(), ObjMember::with_value(VmValue::Int(u64::MAX as i64)));
+                obj.add_property("Infinity".into(), ObjMember::with_value(VmValue::Float(f64::INFINITY)));
+                obj.add_property("NaN".into(), ObjMember::with_value(VmValue::Float(f64::NAN)));
+                Ok(VmValue::Object(Arc::new(obj)))
+            }
+            _ => Err(EvalError::IoError(format!(
+                "Standard library module 'pkl:{}' not yet supported",
+                module_name
+            ))),
+        }
+    }
+
     /// Process an import and return the name and value
     fn process_import(
         &self,
@@ -329,6 +363,18 @@ impl Evaluator {
             .uri
             .as_simple()
             .ok_or_else(|| EvalError::IoError("Import URI cannot be interpolated".to_string()))?;
+
+        // Handle pkl: standard library imports
+        if uri.starts_with("pkl:") {
+            let module_name = uri.strip_prefix("pkl:").unwrap();
+            let import_name = if let Some(alias) = &import.alias {
+                alias.node.clone()
+            } else {
+                module_name.to_string()
+            };
+            let value = self.create_stdlib_module(module_name)?;
+            return Ok((import_name, value));
+        }
 
         // Resolve the import path
         let resolved_path = self
@@ -565,6 +611,19 @@ impl Evaluator {
                                 .map(|arg| self.eval_expr(arg, scope))
                                 .collect::<EvalResult<_>>()?;
                             return self.eval_call(&base_value, &arg_values, scope);
+                        }
+                    }
+
+                    // Handle module.catch(() -> expr) - catches errors and returns error message
+                    if method_name == "catch" {
+                        if let ExprKind::Module = &base.kind {
+                            if args.len() == 1 {
+                                let lambda_value = self.eval_expr(&args[0], scope)?;
+                                match self.eval_call(&lambda_value, &[], scope) {
+                                    Ok(val) => return Ok(val),
+                                    Err(e) => return Ok(VmValue::string(format!("{}", e))),
+                                }
+                            }
                         }
                     }
 

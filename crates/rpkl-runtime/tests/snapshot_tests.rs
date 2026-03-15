@@ -5379,3 +5379,288 @@ fn test_map_map_to_pairs() {
     "#;
     insta::assert_snapshot!(eval_pkl(source));
 }
+
+// =============================================================================
+// Phase 2: module.catch() tests
+// =============================================================================
+
+#[test]
+fn test_module_catch_no_error() {
+    let source = r#"
+        r1 = module.catch(() -> 42)
+        r2 = module.catch(() -> "hello")
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_module_catch_with_error() {
+    let source = r#"
+        r1 = module.catch(() -> 1 / 0)
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_module_catch_type_error() {
+    let source = r#"
+        r1 = module.catch(() -> "hello" + 42)
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+// =============================================================================
+// Phase 2: List foldBack, reduce
+// =============================================================================
+
+#[test]
+fn test_list_fold_back() {
+    let source = r#"
+        r1 = List(1, 2, 3).foldBack(0, (x, acc) -> x + acc)
+        r2 = List(1, 2, 3).foldBack(List(), (x, acc) -> acc.add(x))
+        r3 = List(1).foldBack(0, (x, acc) -> x + acc)
+        r4 = List().foldBack(0, (x, acc) -> x + acc)
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_list_reduce() {
+    let source = r#"
+        r1 = List(1, 2, 3).reduce((x, y) -> x + y)
+        r2 = List(1).reduce((x, y) -> x + y)
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_list_reduce_empty_error() {
+    let source = r#"
+        r1 = List().reduce((x, y) -> x + y)
+    "#;
+    insta::assert_snapshot!(eval_pkl_result(source));
+}
+
+// =============================================================================
+// Phase 2: List filterNonNull, mapNonNull
+// =============================================================================
+
+#[test]
+fn test_list_filter_non_null() {
+    let source = r#"
+        r1 = List(1, 2, 3).filterNonNull()
+        r2 = List().filterNonNull()
+        r3 = List(1, null, 2, null, 3).filterNonNull()
+        r4 = List(null, null).filterNonNull()
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_list_map_non_null() {
+    let source = r#"
+        r1 = List(1, 2, 3).mapNonNull((it) -> it * 2)
+        r2 = List(1, 2, 3).mapNonNull((it) -> null)
+        r3 = List().mapNonNull((it) -> it)
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+// =============================================================================
+// Phase 2: List flatMapIndexed, sortWith
+// =============================================================================
+
+#[test]
+fn test_list_flat_map_indexed() {
+    let source = r#"
+        r1 = List(10, 20, 30).flatMapIndexed((i, x) -> List(i, x))
+        r2 = List().flatMapIndexed((i, x) -> List(i, x))
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_list_sort_with() {
+    let source = r#"
+        r1 = List().sortWith((x, y) -> x < y)
+        r2 = List(3, 1, 2, 5, 4).sortWith((x, y) -> x < y)
+        r3 = List(3, 1, 2, 5, 4).sortWith((x, y) -> x > y)
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+// =============================================================================
+// Phase 2: List startsWith, endsWith
+// =============================================================================
+
+#[test]
+fn test_list_starts_with() {
+    let source = r#"
+        l = List(1, 2, 3)
+        r1 = l.startsWith(List())
+        r2 = l.startsWith(List(1, 2))
+        r3 = l.startsWith(List(1, 3))
+        r4 = l.startsWith(List(1, 2, 3))
+        r5 = l.startsWith(List(1, 2, 3, 4))
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_list_ends_with() {
+    let source = r#"
+        l = List(1, 2, 3)
+        r1 = l.endsWith(List())
+        r2 = l.endsWith(List(2, 3))
+        r3 = l.endsWith(List(1, 3))
+        r4 = l.endsWith(List(1, 2, 3))
+        r5 = l.endsWith(List(0, 1, 2, 3))
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+// =============================================================================
+// Phase 2: List first, rest, last, isDistinct
+// =============================================================================
+
+#[test]
+fn test_list_first_rest_last() {
+    let source = r#"
+        l = List(1, 2, 3)
+        r_first = l.first
+        r_rest = l.rest
+        r_last = l.last
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_list_is_distinct() {
+    let source = r#"
+        r1 = List(1, 2, 3).isDistinct
+        r2 = List(1, 2, 2, 3).isDistinct
+        r3 = List().isDistinct
+        r4 = List(1).isDistinct
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+// =============================================================================
+// Phase 2: List minWith, maxWith, findLastOrNull
+// =============================================================================
+
+#[test]
+fn test_list_min_with_max_with() {
+    let source = r#"
+        l = List(3, 1, 4, 1, 5)
+        r1 = l.minWith((a, b) -> a < b)
+        r2 = l.maxWith((a, b) -> a < b)
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_list_find_last_or_null() {
+    let source = r#"
+        l = List(1, 2, 3, 4, 5)
+        r1 = l.findLastOrNull((x) -> x > 3)
+        r2 = l.findLastOrNull((x) -> x > 10)
+        r3 = List().findLastOrNull((x) -> true)
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+// =============================================================================
+// Phase 2: Set minWith, maxWith, filterIsInstance
+// =============================================================================
+
+#[test]
+fn test_set_min_with_max_with() {
+    let source = r#"
+        s = Set(3, 1, 4, 5, 2)
+        r1 = s.minWith((a, b) -> a < b)
+        r2 = s.maxWith((a, b) -> a < b)
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+// =============================================================================
+// Phase 2: Map toDynamic, toMapping
+// =============================================================================
+
+#[test]
+fn test_map_to_dynamic() {
+    let source = r#"
+        m = Map("name", "Pigeon", "age", 3)
+        r1 = m.toDynamic()
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_map_to_mapping() {
+    let source = r#"
+        m = Map("name", "Pigeon", "age", 3)
+        r1 = m.toMapping()
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+// =============================================================================
+// Phase 2: pkl:math module
+// =============================================================================
+
+#[test]
+fn test_pkl_math_constants() {
+    let source = r#"
+        import "pkl:math"
+
+        r_pi = math.pi
+        r_e = math.e
+        r_inf = math.Infinity
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_pkl_math_int_limits() {
+    let source = r#"
+        import "pkl:math"
+
+        r_max_int = math.maxInt
+        r_min_int = math.minInt
+        r_max_int8 = math.maxInt8
+        r_min_int8 = math.minInt8
+        r_max_int16 = math.maxInt16
+        r_min_int16 = math.minInt16
+        r_max_int32 = math.maxInt32
+        r_min_int32 = math.minInt32
+        r_max_uint8 = math.maxUInt8
+        r_max_uint16 = math.maxUInt16
+        r_max_uint32 = math.maxUInt32
+        r_max_uint = math.maxUInt
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_pkl_math_float_limits() {
+    let source = r#"
+        import "pkl:math"
+
+        r_max = math.maxFiniteFloat
+        r_min = math.minFiniteFloat
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_pkl_math_nan() {
+    let source = r#"
+        import "pkl:math"
+
+        r_nan = math.NaN
+        r_is_nan = math.NaN != math.NaN
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}

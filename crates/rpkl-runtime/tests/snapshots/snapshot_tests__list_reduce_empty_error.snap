@@ -1,0 +1,5 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+expression: eval_pkl_result(source)
+---
+Force error: Invalid operation: Cannot reduce empty List
