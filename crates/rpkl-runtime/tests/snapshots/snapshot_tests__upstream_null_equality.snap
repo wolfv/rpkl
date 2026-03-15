@@ -1,0 +1,13 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 2635
+expression: eval_pkl(source)
+---
+{
+  "null_eq_null": true,
+  "null_neq_one": true,
+  "one_neq_null": true,
+  "null_eq_one": false,
+  "one_eq_null": false,
+  "null_neq_null": false
+}

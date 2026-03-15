@@ -1,0 +1,26 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 3787
+expression: eval_pkl(source)
+---
+{
+  "m": {
+    "a": 1,
+    "b": 2,
+    "c": 3
+  },
+  "filtered": {
+    "b": 2,
+    "c": 3
+  },
+  "mapped": {
+    "a": 10,
+    "b": 20,
+    "c": 30
+  },
+  "to_map": {
+    "a": 1,
+    "b": 2,
+    "c": 3
+  }
+}

@@ -1,0 +1,13 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 4251
+expression: eval_pkl(source)
+---
+{
+  "max_safe_int": 9007199254740991,
+  "neg_max": -9007199254740991,
+  "zero_int": 0,
+  "neg_zero_float": -0.0,
+  "very_small": 1e-9,
+  "very_large": 999999999999.0
+}

@@ -1,0 +1,10 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 3161
+expression: eval_pkl(source)
+---
+{
+  "r1": "abcabcabc",
+  "r2": "",
+  "r3": "ha"
+}

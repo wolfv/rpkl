@@ -1,0 +1,12 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 3429
+expression: eval_pkl(source)
+---
+{
+  "d": "500mb",
+  "value": 500.0,
+  "unit": "mb",
+  "is_positive": true,
+  "is_neg": false
+}

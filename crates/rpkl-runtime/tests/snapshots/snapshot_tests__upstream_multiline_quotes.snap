@@ -1,0 +1,9 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 2928
+expression: eval_pkl(source)
+---
+{
+  "r1": "\n            \"AS IS\"\n            ",
+  "r2": "\n            \"\"AS IS\"\"\n            "
+}

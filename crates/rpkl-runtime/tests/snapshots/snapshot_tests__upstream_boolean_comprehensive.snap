@@ -1,0 +1,29 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 2618
+expression: eval_pkl(source)
+---
+{
+  "and1": true,
+  "and2": false,
+  "and3": false,
+  "and4": false,
+  "or1": true,
+  "or2": true,
+  "or3": true,
+  "or4": false,
+  "not1": false,
+  "not2": true,
+  "eq1": true,
+  "eq2": false,
+  "neq1": true,
+  "neq2": false,
+  "xor1": false,
+  "xor2": true,
+  "xor3": true,
+  "xor4": false,
+  "implies1": true,
+  "implies2": false,
+  "implies3": true,
+  "implies4": true
+}

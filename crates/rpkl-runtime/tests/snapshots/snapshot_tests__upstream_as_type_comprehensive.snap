@@ -1,0 +1,10 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 3980
+expression: eval_pkl(source)
+---
+{
+  "r_int": 42,
+  "r_string": "hello",
+  "r_number": 42
+}

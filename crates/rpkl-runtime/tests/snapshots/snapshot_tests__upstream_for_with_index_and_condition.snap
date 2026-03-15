@@ -1,0 +1,17 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 4312
+expression: eval_pkl(source)
+---
+{
+  "items": [
+    "apple",
+    "banana",
+    "cherry",
+    "date"
+  ],
+  "result": [
+    "BANANA",
+    "CHERRY"
+  ]
+}

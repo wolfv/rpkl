@@ -1,0 +1,16 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 3476
+expression: eval_pkl(source)
+---
+{
+  "empty": {},
+  "single": {
+    "a": 1
+  },
+  "multi": {
+    "a": 1,
+    "b": 2,
+    "c": 3
+  }
+}

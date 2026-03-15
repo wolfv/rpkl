@@ -1,0 +1,15 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 3028
+expression: eval_pkl(source)
+---
+{
+  "ceil_pos": 4.0,
+  "ceil_neg": -3.0,
+  "floor_pos": 3.0,
+  "floor_neg": -4.0,
+  "round_up": 4.0,
+  "round_down": 3.0,
+  "truncate_pos": 3.0,
+  "truncate_neg": -3.0
+}

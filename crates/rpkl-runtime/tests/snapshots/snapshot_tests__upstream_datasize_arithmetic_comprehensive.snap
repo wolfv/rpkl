@@ -1,0 +1,12 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 3441
+expression: eval_pkl(source)
+---
+{
+  "add": "1.5gb",
+  "sub": "1.5gb",
+  "mul": "10mb",
+  "div": "5gb",
+  "negate": "-5mb"
+}

@@ -1,0 +1,9 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 3037
+expression: eval_pkl(source)
+---
+{
+  "to_int": 3,
+  "to_string": "3.14"
+}

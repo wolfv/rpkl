@@ -1,0 +1,6 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 3708
+expression: eval_pkl_result(source)
+---
+Force error: Invalid operation: Cannot access member 'matchEntire' on Regex

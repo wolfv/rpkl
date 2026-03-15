@@ -1,0 +1,16 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 3082
+expression: eval_pkl(source)
+---
+{
+  "contains_yes": true,
+  "contains_no": false,
+  "starts_with": true,
+  "starts_with_no": false,
+  "ends_with": true,
+  "ends_with_no": false,
+  "index_of": 6,
+  "index_of_none": -1,
+  "last_index_of": 3
+}

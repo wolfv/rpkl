@@ -1,0 +1,22 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 3677
+expression: eval_pkl(source)
+---
+{
+  "seq": [
+    0,
+    2,
+    4,
+    6,
+    8
+  ],
+  "to_list": [
+    0,
+    2,
+    4,
+    6,
+    8,
+    10
+  ]
+}

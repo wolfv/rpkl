@@ -1,0 +1,19 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 4217
+expression: eval_pkl(source)
+---
+{
+  "list1": [
+    42
+  ],
+  "set1": [
+    42
+  ],
+  "map1": {
+    "key": "value"
+  },
+  "list_first": 42,
+  "list_last": 42,
+  "list_single": 42
+}

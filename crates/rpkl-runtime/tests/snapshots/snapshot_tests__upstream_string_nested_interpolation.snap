@@ -1,0 +1,12 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 2854
+expression: eval_pkl(source)
+---
+{
+  "str1": "How",
+  "str2": "you",
+  "res1": "How are you today? Are you hungry?",
+  "res2": "Is (str1 + str2) a word?",
+  "res3": "Is soma a word?"
+}

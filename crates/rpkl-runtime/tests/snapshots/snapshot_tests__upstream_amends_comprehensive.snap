@@ -1,0 +1,22 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 4093
+expression: eval_pkl(source)
+---
+{
+  "base": {
+    "host": "localhost",
+    "port": 8080,
+    "debug": false
+  },
+  "dev": {
+    "host": "localhost",
+    "port": 3000,
+    "debug": true
+  },
+  "prod": {
+    "host": "prod.example.com",
+    "port": 8080,
+    "debug": false
+  }
+}

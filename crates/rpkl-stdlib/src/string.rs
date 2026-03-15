@@ -47,6 +47,15 @@ pub fn register(registry: &mut ExternalRegistry) {
     registry.register_method("String", "dropWhile", Arc::new(string_drop_while));
     registry.register_method("String", "takeLastWhile", Arc::new(string_take_last_while));
     registry.register_method("String", "dropLastWhile", Arc::new(string_drop_last_while));
+    registry.register_method("String", "matches", Arc::new(string_matches));
+    registry.register_method("String", "replaceRange", Arc::new(string_replace_range));
+
+    // Hash properties
+    registry.register_property("String", "sha1", Arc::new(string_sha1));
+    registry.register_property("String", "sha256", Arc::new(string_sha256));
+    registry.register_property("String", "md5", Arc::new(string_md5));
+    registry.register_property("String", "base64", Arc::new(string_base64));
+    registry.register_property("String", "base64Decoded", Arc::new(string_base64_decoded));
 }
 
 fn get_string_arg(args: &[VmValue], idx: usize) -> EvalResult<Arc<str>> {
@@ -214,9 +223,18 @@ fn string_replace_all(
     _scope: &rpkl_runtime::ScopeRef,
 ) -> EvalResult<VmValue> {
     let this = get_string_arg(args, 0)?;
-    let pattern = get_string_arg(args, 1)?;
     let replacement = get_string_arg(args, 2)?;
-    Ok(VmValue::string(this.replace(&*pattern, &replacement)))
+    // Check if pattern is a Regex
+    if let Some(regex_val) = args.get(1).and_then(|v| {
+        if let VmValue::Regex(r) = v { Some(r) } else { None }
+    }) {
+        let re = regex::Regex::new(&regex_val.pattern)
+            .map_err(|e| EvalError::InvalidOperation(format!("Invalid regex: {}", e)))?;
+        Ok(VmValue::string(re.replace_all(&this, replacement.as_ref()).to_string()))
+    } else {
+        let pattern = get_string_arg(args, 1)?;
+        Ok(VmValue::string(this.replace(&*pattern, &replacement)))
+    }
 }
 
 fn string_replace_first(
@@ -225,9 +243,18 @@ fn string_replace_first(
     _scope: &rpkl_runtime::ScopeRef,
 ) -> EvalResult<VmValue> {
     let this = get_string_arg(args, 0)?;
-    let pattern = get_string_arg(args, 1)?;
     let replacement = get_string_arg(args, 2)?;
-    Ok(VmValue::string(this.replacen(&*pattern, &replacement, 1)))
+    // Check if pattern is a Regex
+    if let Some(regex_val) = args.get(1).and_then(|v| {
+        if let VmValue::Regex(r) = v { Some(r) } else { None }
+    }) {
+        let re = regex::Regex::new(&regex_val.pattern)
+            .map_err(|e| EvalError::InvalidOperation(format!("Invalid regex: {}", e)))?;
+        Ok(VmValue::string(re.replace(&this, replacement.as_ref()).to_string()))
+    } else {
+        let pattern = get_string_arg(args, 1)?;
+        Ok(VmValue::string(this.replacen(&*pattern, &replacement, 1)))
+    }
 }
 
 fn string_replace_last(
@@ -609,12 +636,109 @@ fn string_drop_last_while(
         let char_str = VmValue::string(c.to_string());
         let bindings = vec![(predicate.params[0].clone(), char_str)];
         let lambda_scope = rpkl_runtime::Scope::for_lambda(&predicate.captured_scope, bindings);
-        let drop = eval.eval_expr(&predicate.body, &lambda_scope)?;
-        if drop.is_truthy() {
+        let drop_val = eval.eval_expr(&predicate.body, &lambda_scope)?;
+        if drop_val.is_truthy() {
             end -= 1;
         } else {
             break;
         }
     }
     Ok(VmValue::string(chars[..end].iter().collect::<String>()))
+}
+
+fn string_matches(
+    args: &[VmValue],
+    _eval: &rpkl_runtime::Evaluator,
+    _scope: &rpkl_runtime::ScopeRef,
+) -> EvalResult<VmValue> {
+    let this = get_string_arg(args, 0)?;
+    let regex_val = args.get(1).and_then(|v| {
+        if let VmValue::Regex(r) = v { Some(r) } else { None }
+    }).ok_or_else(|| EvalError::type_error("Regex", args.get(1).map_or("none", |v| v.type_name())))?;
+    let re = regex::Regex::new(&regex_val.pattern)
+        .map_err(|e| EvalError::InvalidOperation(format!("Invalid regex: {}", e)))?;
+    let full_match = re.find(&this).is_some_and(|m| m.start() == 0 && m.end() == this.len());
+    Ok(VmValue::Boolean(full_match))
+}
+
+fn string_replace_range(
+    args: &[VmValue],
+    _eval: &rpkl_runtime::Evaluator,
+    _scope: &rpkl_runtime::ScopeRef,
+) -> EvalResult<VmValue> {
+    let this = get_string_arg(args, 0)?;
+    let start = args.get(1).and_then(|v| v.as_int()).ok_or_else(|| {
+        EvalError::type_error("Int", args.get(1).map_or("none", |v| v.type_name()))
+    })? as usize;
+    let exclusive_end = args.get(2).and_then(|v| v.as_int()).ok_or_else(|| {
+        EvalError::type_error("Int", args.get(2).map_or("none", |v| v.type_name()))
+    })? as usize;
+    let replacement = get_string_arg(args, 3)?;
+
+    let chars: Vec<char> = this.chars().collect();
+    let end = exclusive_end.min(chars.len());
+    let s = start.min(chars.len());
+    let mut result = String::new();
+    result.extend(&chars[..s]);
+    result.push_str(&replacement);
+    result.extend(&chars[end..]);
+    Ok(VmValue::string(result))
+}
+
+fn string_sha1(
+    args: &[VmValue],
+    _eval: &rpkl_runtime::Evaluator,
+    _scope: &rpkl_runtime::ScopeRef,
+) -> EvalResult<VmValue> {
+    use sha1::Digest;
+    let this = get_string_arg(args, 0)?;
+    let hash = sha1::Sha1::digest(this.as_bytes());
+    Ok(VmValue::string(format!("{:x}", hash)))
+}
+
+fn string_sha256(
+    args: &[VmValue],
+    _eval: &rpkl_runtime::Evaluator,
+    _scope: &rpkl_runtime::ScopeRef,
+) -> EvalResult<VmValue> {
+    use sha2::Digest;
+    let this = get_string_arg(args, 0)?;
+    let hash = sha2::Sha256::digest(this.as_bytes());
+    Ok(VmValue::string(format!("{:x}", hash)))
+}
+
+fn string_md5(
+    args: &[VmValue],
+    _eval: &rpkl_runtime::Evaluator,
+    _scope: &rpkl_runtime::ScopeRef,
+) -> EvalResult<VmValue> {
+    use md5::Digest;
+    let this = get_string_arg(args, 0)?;
+    let hash = md5::Md5::digest(this.as_bytes());
+    Ok(VmValue::string(format!("{:x}", hash)))
+}
+
+fn string_base64(
+    args: &[VmValue],
+    _eval: &rpkl_runtime::Evaluator,
+    _scope: &rpkl_runtime::ScopeRef,
+) -> EvalResult<VmValue> {
+    use base64::Engine;
+    let this = get_string_arg(args, 0)?;
+    let encoded = base64::engine::general_purpose::STANDARD.encode(this.as_bytes());
+    Ok(VmValue::string(encoded))
+}
+
+fn string_base64_decoded(
+    args: &[VmValue],
+    _eval: &rpkl_runtime::Evaluator,
+    _scope: &rpkl_runtime::ScopeRef,
+) -> EvalResult<VmValue> {
+    use base64::Engine;
+    let this = get_string_arg(args, 0)?;
+    let decoded = base64::engine::general_purpose::STANDARD.decode(this.as_bytes())
+        .map_err(|e| EvalError::InvalidOperation(format!("Invalid base64: {}", e)))?;
+    let s = String::from_utf8(decoded)
+        .map_err(|e| EvalError::InvalidOperation(format!("Invalid UTF-8: {}", e)))?;
+    Ok(VmValue::string(s))
 }

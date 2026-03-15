@@ -1,0 +1,11 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 3122
+expression: eval_pkl(source)
+---
+{
+  "take_while": "aa",
+  "drop_while": "bccc",
+  "take_last_while": "ccc",
+  "drop_last_while": "aab"
+}

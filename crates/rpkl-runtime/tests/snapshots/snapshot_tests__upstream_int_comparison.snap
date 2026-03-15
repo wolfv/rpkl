@@ -1,0 +1,15 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 2526
+expression: eval_pkl(source)
+---
+{
+  "eq": true,
+  "neq": true,
+  "lt": true,
+  "gt": true,
+  "lte": true,
+  "gte": true,
+  "lt_false": false,
+  "gt_false": false
+}

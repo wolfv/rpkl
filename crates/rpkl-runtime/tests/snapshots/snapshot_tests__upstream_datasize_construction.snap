@@ -1,0 +1,18 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 3417
+expression: eval_pkl(source)
+---
+{
+  "b": "1b",
+  "kb": "1kb",
+  "mb": "1mb",
+  "gb": "1gb",
+  "tb": "1tb",
+  "pb": "1pb",
+  "kib": "1kib",
+  "mib": "1mib",
+  "gib": "1gib",
+  "tib": "1tib",
+  "pib": "1pib"
+}

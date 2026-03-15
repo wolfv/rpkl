@@ -1,0 +1,21 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 3558
+expression: eval_pkl(source)
+---
+{
+  "empty": [],
+  "single": [
+    1
+  ],
+  "multi": [
+    1,
+    2,
+    3
+  ],
+  "deduped": [
+    1,
+    2,
+    3
+  ]
+}

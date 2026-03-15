@@ -1,0 +1,6 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 3988
+expression: eval_pkl_result(source)
+---
+Force error: Type cast failed: cannot cast Int to String

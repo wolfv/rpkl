@@ -1,0 +1,11 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 4567
+expression: eval_pkl(source)
+---
+{
+  "name": "Pigeon",
+  "age": 42,
+  "value": "hello",
+  "value2": 42
+}

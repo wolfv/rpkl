@@ -1,0 +1,15 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 3806
+expression: eval_pkl(source)
+---
+{
+  "d": {
+    "name": "Pigeon",
+    "age": 42,
+    "nested": {
+      "x": 1,
+      "y": 2
+    }
+  }
+}

@@ -1,0 +1,11 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 4366
+expression: eval_pkl(source)
+---
+{
+  "describe": "<function>",
+  "r1": "integer",
+  "r2": "string",
+  "r3": "other"
+}

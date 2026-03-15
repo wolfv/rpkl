@@ -43,6 +43,13 @@ pub fn register(registry: &mut ExternalRegistry) {
     registry.register_method("Int", "or", Arc::new(int_or));
     registry.register_method("Int", "xor", Arc::new(int_xor));
 
+    // Int/Float min/max
+    registry.register_method("Int", "min", Arc::new(int_min));
+    registry.register_method("Int", "max", Arc::new(int_max));
+    registry.register_method("Float", "min", Arc::new(float_min));
+    registry.register_method("Float", "max", Arc::new(float_max));
+    registry.register_method("Float", "toString", Arc::new(any_to_string));
+
     // Pair properties (accessed without parentheses)
     registry.register_property("Pair", "first", Arc::new(pair_first));
     registry.register_property("Pair", "second", Arc::new(pair_second));
@@ -635,4 +642,53 @@ fn to_typed(
     }
 
     Ok(VmValue::Object(Arc::new(new_obj)))
+}
+
+// Int min/max methods
+fn int_min(
+    args: &[VmValue],
+    _eval: &rpkl_runtime::Evaluator,
+    _scope: &rpkl_runtime::ScopeRef,
+) -> EvalResult<VmValue> {
+    let this = args[0].as_int().ok_or_else(|| EvalError::type_error("Int", args[0].type_name()))?;
+    let other = args.get(1).and_then(|v| v.as_int()).ok_or_else(|| {
+        EvalError::type_error("Int", args.get(1).map_or("none", |v| v.type_name()))
+    })?;
+    Ok(VmValue::Int(this.min(other)))
+}
+
+fn int_max(
+    args: &[VmValue],
+    _eval: &rpkl_runtime::Evaluator,
+    _scope: &rpkl_runtime::ScopeRef,
+) -> EvalResult<VmValue> {
+    let this = args[0].as_int().ok_or_else(|| EvalError::type_error("Int", args[0].type_name()))?;
+    let other = args.get(1).and_then(|v| v.as_int()).ok_or_else(|| {
+        EvalError::type_error("Int", args.get(1).map_or("none", |v| v.type_name()))
+    })?;
+    Ok(VmValue::Int(this.max(other)))
+}
+
+fn float_min(
+    args: &[VmValue],
+    _eval: &rpkl_runtime::Evaluator,
+    _scope: &rpkl_runtime::ScopeRef,
+) -> EvalResult<VmValue> {
+    let this = args[0].as_float().ok_or_else(|| EvalError::type_error("Float", args[0].type_name()))?;
+    let other = args.get(1).and_then(|v| v.as_float()).ok_or_else(|| {
+        EvalError::type_error("Float", args.get(1).map_or("none", |v| v.type_name()))
+    })?;
+    Ok(VmValue::Float(this.min(other)))
+}
+
+fn float_max(
+    args: &[VmValue],
+    _eval: &rpkl_runtime::Evaluator,
+    _scope: &rpkl_runtime::ScopeRef,
+) -> EvalResult<VmValue> {
+    let this = args[0].as_float().ok_or_else(|| EvalError::type_error("Float", args[0].type_name()))?;
+    let other = args.get(1).and_then(|v| v.as_float()).ok_or_else(|| {
+        EvalError::type_error("Float", args.get(1).map_or("none", |v| v.type_name()))
+    })?;
+    Ok(VmValue::Float(this.max(other)))
 }

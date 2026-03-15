@@ -1,0 +1,9 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 3208
+expression: eval_pkl(source)
+---
+{
+  "folded": 10,
+  "folded_str": "abc"
+}

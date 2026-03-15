@@ -1,0 +1,19 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 2511
+expression: eval_pkl(source)
+---
+{
+  "add": 3,
+  "sub": 2,
+  "mul": 20,
+  "div": 3,
+  "rem": 1,
+  "power": 1024,
+  "power_zero": 1,
+  "power_one": 5,
+  "neg": -5,
+  "combined": 14,
+  "combined2": 20,
+  "power_precedence": 64
+}

@@ -1,0 +1,25 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 4226
+expression: eval_pkl(source)
+---
+{
+  "nested_list": [
+    [
+      1,
+      2
+    ],
+    [
+      3,
+      4
+    ]
+  ],
+  "nested_map": {
+    "a": {
+      "x": 1
+    },
+    "b": {
+      "y": 2
+    }
+  }
+}

@@ -1,0 +1,22 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 4509
+expression: eval_pkl(source)
+---
+{
+  "items": [
+    {
+      "name": "Apple",
+      "price": 1.5
+    },
+    {
+      "name": "Banana",
+      "price": 0.75
+    },
+    {
+      "name": "Cherry",
+      "price": 3.0
+    }
+  ],
+  "total": 5.25
+}

@@ -1,0 +1,22 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 4172
+expression: eval_pkl(source)
+---
+{
+  "features": {
+    "dark-mode": {
+      "enabled": true,
+      "rollout": 1.0,
+      "description": "Dark mode UI theme"
+    },
+    "new-checkout": {
+      "enabled": false,
+      "rollout": 0.5,
+      "description": "New checkout flow"
+    }
+  },
+  "enabled_features": [
+    "dark-mode"
+  ]
+}

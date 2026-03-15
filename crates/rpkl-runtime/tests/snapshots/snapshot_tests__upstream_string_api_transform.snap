@@ -1,0 +1,16 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 3098
+expression: eval_pkl(source)
+---
+{
+  "upper": "HELLO",
+  "lower": "hello",
+  "reverse": "olleh",
+  "trim": "hello",
+  "trim_start": "hello  ",
+  "trim_end": "  hello",
+  "replace_first": "world hello",
+  "replace_all": "world world",
+  "replace_range": "hXYZlo"
+}

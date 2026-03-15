@@ -1,0 +1,19 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 3013
+expression: eval_pkl(source)
+---
+{
+  "sign_pos": 1.0,
+  "sign_neg": -1.0,
+  "sign_zero": 1.0,
+  "abs_pos": 3.14,
+  "abs_neg": 3.14,
+  "is_positive": true,
+  "is_negative": false,
+  "is_non_zero": true,
+  "is_zero": false,
+  "is_finite": true,
+  "is_integer_yes": true,
+  "is_integer_no": false
+}

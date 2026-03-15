@@ -1,0 +1,22 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 2492
+expression: eval_pkl(source)
+---
+{
+  "dec": 123456,
+  "hex": 255,
+  "hex_upper": 255,
+  "bin": 21,
+  "oct": 511,
+  "underscore_dec": 1,
+  "_000_000": null,
+  "underscore_hex": 255,
+  "_FF": null,
+  "underscore_bin": 10,
+  "_1010": null,
+  "underscore_oct": 63,
+  "_77": null,
+  "negative": -42,
+  "zero": 0
+}

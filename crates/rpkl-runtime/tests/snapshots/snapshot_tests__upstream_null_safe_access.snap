@@ -1,0 +1,9 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 2655
+expression: eval_pkl(source)
+---
+{
+  "r1": null,
+  "r2": "PIGEON"
+}

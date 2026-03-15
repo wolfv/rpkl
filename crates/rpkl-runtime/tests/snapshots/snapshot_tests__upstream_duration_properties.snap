@@ -1,0 +1,12 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 3360
+expression: eval_pkl(source)
+---
+{
+  "d": "90min",
+  "value": 90.0,
+  "unit": "min",
+  "is_positive": true,
+  "is_neg": false
+}

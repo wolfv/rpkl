@@ -1,0 +1,11 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 2820
+expression: eval_pkl(source)
+---
+{
+  "x": true,
+  "yes": "yes",
+  "no": "no",
+  "res": "The answer is (if (x) yes else no)"
+}

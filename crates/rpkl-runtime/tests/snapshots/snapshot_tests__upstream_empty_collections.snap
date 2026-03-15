@@ -1,0 +1,15 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 4204
+expression: eval_pkl(source)
+---
+{
+  "empty_list": [],
+  "empty_set": [],
+  "empty_map": {},
+  "empty_listing": [],
+  "empty_mapping": {},
+  "list_empty": true,
+  "set_empty": true,
+  "map_empty": true
+}

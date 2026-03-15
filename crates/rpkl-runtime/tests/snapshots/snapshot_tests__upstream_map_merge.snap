@@ -1,0 +1,20 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 4617
+expression: eval_pkl(source)
+---
+{
+  "m1": {
+    "a": 1,
+    "b": 2
+  },
+  "m2": {
+    "b": 20,
+    "c": 3
+  },
+  "merged": {
+    "a": 1,
+    "b": 20,
+    "c": 3
+  }
+}
