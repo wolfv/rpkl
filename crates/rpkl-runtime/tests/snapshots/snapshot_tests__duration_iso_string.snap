@@ -1,0 +1,17 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+expression: eval_pkl(source)
+---
+{
+  "d1": "PT0.000000001S",
+  "d2": "PT0.0000022S",
+  "d3": "PT0.003S",
+  "d4": "PT4.4S",
+  "d5": "PT5M",
+  "d6": "PT6H36M",
+  "d7": "PT168H",
+  "d8": "PT0S",
+  "d9": "PT0S",
+  "d10": "PT0S",
+  "d11": "PT2400H"
+}

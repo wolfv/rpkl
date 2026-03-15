@@ -3703,9 +3703,10 @@ fn test_upstream_regex_match_methods() {
     let source = r#"
         r = Regex("[0-9]+")
         matches_full = r.matchEntire("12345")
-        find_in = "abc 123 def 456".matches(Regex("[0-9]+"))
+        matches_none = r.matchEntire("abc")
+        find_in = "hello123".matches(Regex("[a-z]+[0-9]+"))
     "#;
-    insta::assert_snapshot!(eval_pkl_result(source));
+    insta::assert_snapshot!(eval_pkl(source));
 }
 
 #[test]
@@ -4613,6 +4614,768 @@ fn test_upstream_map_merge() {
         m1 = Map("a", 1, "b", 2)
         m2 = Map("b", 20, "c", 3)
         merged = Map("a", 1, "b", 20, "c", 3)
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+// =============================================================================
+// Duration upstream tests
+// =============================================================================
+
+#[test]
+fn test_duration_iso_string() {
+    let source = r#"
+        d1 = 1.ns.isoString
+        d2 = 2.2.us.isoString
+        d3 = 3.ms.isoString
+        d4 = 4.4.s.isoString
+        d5 = 5.min.isoString
+        d6 = 6.6.h.isoString
+        d7 = 7.d.isoString
+        d8 = 0.h.isoString
+        d9 = 0.s.isoString
+        d10 = 0.ms.isoString
+        d11 = 100.d.isoString
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_duration_is_positive() {
+    let source = r#"
+        r1 = 0.min.isPositive
+        r2 = 1.min.isPositive
+        r3 = 0.1.min.isPositive
+        r4 = (-1).min.isPositive
+        r5 = (-0.1).min.isPositive
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_duration_is_between() {
+    let source = r#"
+        r1 = 3.min.isBetween(2.min, 4.min)
+        r2 = 3.min.isBetween(3.min, 4.min)
+        r3 = 3.min.isBetween(2.min, 3.min)
+        r4 = 3.min.isBetween(3.min, 3.min)
+        r5 = 3.min.isBetween(120.s, 180.s)
+        r6 = 3.min.isBetween(1.min, 2.min)
+        r7 = 3.min.isBetween(4.min, 2.min)
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_duration_to_unit_comprehensive2() {
+    let source = r#"
+        d1 = 1.d.toUnit("h")
+        d2 = 1.d.toUnit("min")
+        d3 = 1.d.toUnit("s")
+        d4 = 1.d.toUnit("ms")
+        d5 = 1.d.toUnit("us")
+        d6 = 1.d.toUnit("ns")
+        d7 = 0.5.h.toUnit("s")
+        d8 = 1800.s.toUnit("h")
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+// =============================================================================
+// DataSize upstream tests
+// =============================================================================
+
+#[test]
+fn test_datasize_is_positive() {
+    let source = r#"
+        r1 = 0.mb.isPositive
+        r2 = 1.mb.isPositive
+        r3 = 0.1.mb.isPositive
+        r4 = (-1).mb.isPositive
+        r5 = (-0.1).mb.isPositive
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_datasize_is_binary_unit() {
+    let source = r#"
+        r1 = 1.pib.isBinaryUnit
+        r2 = 2.tib.isBinaryUnit
+        r3 = 3.gib.isBinaryUnit
+        r4 = 4.mib.isBinaryUnit
+        r5 = 5.kib.isBinaryUnit
+        r6 = 6.b.isBinaryUnit
+        r7 = 1.pb.isBinaryUnit
+        r8 = 2.tb.isBinaryUnit
+        r9 = 3.gb.isBinaryUnit
+        r10 = 4.mb.isBinaryUnit
+        r11 = 5.kb.isBinaryUnit
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_datasize_is_decimal_unit() {
+    let source = r#"
+        r1 = 1.pb.isDecimalUnit
+        r2 = 2.tb.isDecimalUnit
+        r3 = 3.gb.isDecimalUnit
+        r4 = 4.mb.isDecimalUnit
+        r5 = 5.kb.isDecimalUnit
+        r6 = 6.b.isDecimalUnit
+        r7 = 1.pib.isDecimalUnit
+        r8 = 2.tib.isDecimalUnit
+        r9 = 3.gib.isDecimalUnit
+        r10 = 4.mib.isDecimalUnit
+        r11 = 5.kib.isDecimalUnit
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_datasize_is_between() {
+    let source = r#"
+        r1 = 3.kb.isBetween(2.kb, 4.kb)
+        r2 = 3.kb.isBetween(3.kb, 4.kb)
+        r3 = 3.kb.isBetween(2.kb, 3.kb)
+        r4 = 3.kb.isBetween(3.kb, 3.kb)
+        r5 = 3.kb.isBetween(2000.b, 3000.b)
+        r6 = 3.kb.isBetween(1.kb, 2.kb)
+        r7 = 3.kb.isBetween(4.kb, 2.kb)
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_datasize_to_binary_unit() {
+    let source = r#"
+        r1 = 1.024.pb.toBinaryUnit()
+        r2 = 1.024.tb.toBinaryUnit()
+        r3 = 1.024.gb.toBinaryUnit()
+        r4 = 1.024.mb.toBinaryUnit()
+        r5 = 1.024.kb.toBinaryUnit()
+        r6 = 1.024.b.toBinaryUnit()
+        r7 = 1.024.pib.toBinaryUnit()
+        r8 = 1.024.tib.toBinaryUnit()
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_datasize_to_decimal_unit() {
+    let source = r#"
+        r1 = 1.pb.toDecimalUnit()
+        r2 = 1.tb.toDecimalUnit()
+        r3 = 1.gb.toDecimalUnit()
+        r4 = 1.mb.toDecimalUnit()
+        r5 = 1.kb.toDecimalUnit()
+        r6 = 1.b.toDecimalUnit()
+        r7 = 1.pib.toDecimalUnit()
+        r8 = 1.tib.toDecimalUnit()
+        r9 = 1.gib.toDecimalUnit()
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_datasize_to_unit_comprehensive2() {
+    let source = r#"
+        r1 = 1.pb.toUnit("tb")
+        r2 = 1.pb.toUnit("gb")
+        r3 = 1.pb.toUnit("mb")
+        r4 = 1.pb.toUnit("kb")
+        r5 = 1.pb.toUnit("b")
+        r6 = 1.pib.toUnit("tib")
+        r7 = 1.pib.toUnit("gib")
+        r8 = 1.pib.toUnit("mib")
+        r9 = 1.pib.toUnit("kib")
+        r10 = 1.pib.toUnit("b")
+        r11 = 0.5.gb.toUnit("kb")
+        r12 = 0.5.gb.toUnit("gib")
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_datasize_value_and_unit() {
+    let source = r#"
+        r1 = 1.b.value
+        r2 = 2.2.kb.value
+        r3 = 3.kib.value
+        r4 = 1.b.unit
+        r5 = 2.2.kb.unit
+        r6 = 3.kib.unit
+        r7 = 4.4.mb.unit
+        r8 = 5.mib.unit
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+// =============================================================================
+// Map upstream tests - additional coverage
+// =============================================================================
+
+#[test]
+fn test_map_contains_value() {
+    let source = r#"
+        m = Map("one", 1, "two", 2, "three", 3)
+        r1 = m.containsValue(3)
+        r2 = Map().containsValue(3)
+        r3 = m.containsValue(4)
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_map_is_not_empty() {
+    let source = r#"
+        r1 = Map().isNotEmpty
+        r2 = Map("one", 1).isNotEmpty
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_map_map_keys() {
+    let source = r#"
+        m = Map("one", 1, "two", 2)
+        r1 = Map().mapKeys((k, v) -> k)
+        r2 = m.mapKeys((k, v) -> k.toUpperCase())
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_map_map_values() {
+    let source = r#"
+        m = Map("one", 1, "two", 2)
+        r1 = Map().mapValues((k, v) -> v)
+        r2 = m.mapValues((k, v) -> v * 3)
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_map_flat_map() {
+    let source = r#"
+        m = Map("one", 1, "two", 2)
+        r1 = Map().flatMap((k, v) -> Map(v, v * 3))
+        r2 = m.flatMap((k, v) -> Map(v, v * 3))
+        r3 = m.flatMap((k, v) -> Map(k, k.reverse()))
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_map_flat_map_error() {
+    let source = r#"
+        m = Map("one", 1)
+        r1 = m.flatMap((k, v) -> 42)
+    "#;
+    insta::assert_snapshot!(eval_pkl_result(source));
+}
+
+// =============================================================================
+// Set upstream tests - comprehensive
+// =============================================================================
+
+#[test]
+fn test_set_starts_with() {
+    let source = r#"
+        s = Set(1, 2, 3)
+        r1 = s.startsWith(List())
+        r2 = s.startsWith(List(1, 2))
+        r3 = s.startsWith(List(1, 3))
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_set_ends_with() {
+    let source = r#"
+        s = Set(1, 2, 3)
+        r1 = s.endsWith(List())
+        r2 = s.endsWith(List(2, 3))
+        r3 = s.endsWith(List(1, 3))
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_set_first_rest_last() {
+    let source = r#"
+        s = Set(1, 2, 3)
+        r_first = s.first
+        r_rest = s.rest
+        r_last = s.last
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_set_single() {
+    let source = r#"
+        r1 = Set(42).single
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_set_count() {
+    let source = r#"
+        s = Set(1, 2, 3)
+        r1 = s.count((x) -> x >= 2)
+        r2 = s.count((x) -> true)
+        r3 = s.count((x) -> false)
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_set_find() {
+    let source = r#"
+        s = Set(1, 2, 3)
+        r1 = s.find((x) -> x >= 2)
+        r2 = s.find((x) -> true)
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_set_find_last() {
+    let source = r#"
+        s = Set(1, 2, 3)
+        r1 = s.findLast((x) -> x >= 2)
+        r2 = s.findLast((x) -> true)
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_set_take_drop() {
+    let source = r#"
+        s = Set(1, 2, 3)
+        t0 = s.take(0)
+        t2 = s.take(2)
+        t4 = s.take(4)
+        d0 = s.drop(0)
+        d2 = s.drop(2)
+        d4 = s.drop(4)
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_set_take_last_drop_last() {
+    let source = r#"
+        s = Set(1, 2, 3)
+        tl0 = s.takeLast(0)
+        tl2 = s.takeLast(2)
+        tl4 = s.takeLast(4)
+        dl0 = s.dropLast(0)
+        dl2 = s.dropLast(2)
+        dl4 = s.dropLast(4)
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_set_take_while_drop_while() {
+    let source = r#"
+        s = Set(1, 2, 3)
+        tw1 = s.takeWhile((x) -> true)
+        tw2 = s.takeWhile((x) -> false)
+        tw3 = s.takeWhile((x) -> x < 3)
+        dw1 = s.dropWhile((x) -> true)
+        dw2 = s.dropWhile((x) -> false)
+        dw3 = s.dropWhile((x) -> x < 3)
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_set_take_last_while_drop_last_while() {
+    let source = r#"
+        s = Set(1, 2, 3)
+        tlw1 = s.takeLastWhile((x) -> true)
+        tlw2 = s.takeLastWhile((x) -> false)
+        tlw3 = s.takeLastWhile((x) -> x > 1)
+        dlw1 = s.dropLastWhile((x) -> true)
+        dlw2 = s.dropLastWhile((x) -> false)
+        dlw3 = s.dropLastWhile((x) -> x > 1)
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_set_fold_back() {
+    let source = r#"
+        s = Set(1, 2, 3)
+        r1 = s.foldBack(0, (x, acc) -> x + acc)
+        r2 = s.foldBack(List(), (x, acc) -> acc.add(x))
+        r3 = Set(1).foldBack(0, (x, acc) -> x + acc)
+        r4 = Set().foldBack(0, (x, acc) -> x + acc)
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_set_reduce() {
+    let source = r#"
+        s = Set(1, 2, 3)
+        r1 = s.reduce((x, y) -> x + y)
+        r2 = Set(1).reduce((x, y) -> x + y)
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_set_reduce_empty_error() {
+    let source = r#"
+        r1 = Set().reduce((x, y) -> x + y)
+    "#;
+    insta::assert_snapshot!(eval_pkl_result(source));
+}
+
+#[test]
+fn test_set_group_by() {
+    let source = r#"
+        s = Set(1, 2, 3, 4, 5)
+        r1 = s.groupBy((x) -> x.isOdd)
+        r2 = s.groupBy((x) -> true)
+        r3 = Set().groupBy((x) -> x)
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_set_sort() {
+    let source = r#"
+        r1 = Set(3, 1, 2).sort()
+        r2 = Set("Pigeon", "Barn Owl", "Parrot").sort()
+        r3 = Set().sort()
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_set_sort_by() {
+    let source = r#"
+        s = Set(1, 2, 3)
+        r1 = s.sortBy((it) -> it)
+        r2 = s.sortBy((it) -> -it)
+        r3 = Set("Pigeon", "Barn Owl", "Parrot").sortBy((it) -> it.length)
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_set_sort_with() {
+    let source = r#"
+        r1 = Set().sortWith((x, y) -> x < y)
+        r2 = Set(3, 1, 2, 5, 4).sortWith((x, y) -> x < y)
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_set_zip() {
+    let source = r#"
+        r1 = Set(1, 2, 3).zip(Set(4, 5, 6))
+        r2 = Set(1, 2, 3).zip(Set(4, 5, 6, 7, 8))
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_set_filter_indexed() {
+    let source = r#"
+        s = Set(1, 2, 3)
+        r1 = s.filterIndexed((i, n) -> i.isOdd)
+        r2 = s.filterIndexed((i, n) -> i.isEven)
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_set_map_indexed() {
+    let source = r#"
+        s = Set(1, 2, 3)
+        r1 = s.mapIndexed((i, n) -> n * i)
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_set_flat_map_indexed() {
+    let source = r#"
+        s = Set(1, 2, 3)
+        r1 = s.flatMapIndexed((i, n) -> Set(n * i))
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_set_fold_indexed() {
+    let source = r#"
+        s = Set(1, 2, 3)
+        r1 = s.foldIndexed(0, (idx, x, y) -> idx + x + y)
+        r2 = Set(1).foldIndexed(0, (idx, x, y) -> idx + x + y)
+        r3 = Set().foldIndexed(0, (idx, x, y) -> idx + x + y)
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_set_filter_non_null() {
+    let source = r#"
+        r1 = Set(1, 2, 3).filterNonNull()
+        r2 = Set().filterNonNull()
+        r3 = Set(1, null, 2, null, 3).filterNonNull()
+        r4 = Set(null, null).filterNonNull()
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_set_map_non_null() {
+    let source = r#"
+        s = Set(1, 2, 3)
+        r1 = s.mapNonNull((it) -> it)
+        r2 = s.mapNonNull((it) -> null)
+        r3 = Set().mapNonNull((it) -> it)
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_set_split() {
+    let source = r#"
+        s = Set(1, 2, 3)
+        r1 = s.split(0)
+        r2 = s.split(1)
+        r3 = s.split(2)
+        r4 = s.split(3)
+        r5 = Set().split(0)
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_set_partition() {
+    let source = r#"
+        s = Set(1, 2, 3)
+        r1 = s.partition((it) -> it.isEven)
+        r2 = s.partition((it) -> it.isOdd)
+        r3 = s.partition((it) -> true)
+        r4 = s.partition((it) -> false)
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_set_min_max() {
+    let source = r#"
+        s = Set(1, 2, 3)
+        r_min = s.min
+        r_max = s.max
+        r_str_min = Set("Pigeon", "Barn Owl", "Parrot").min
+        r_str_max = Set("Pigeon", "Barn Owl", "Parrot").max
+        r_float_min = Set(3.9, -8.4, 42.0).min
+        r_float_max = Set(3.9, -8.4, 42.0).max
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_set_min_max_empty_error() {
+    let source = r#"
+        r1 = Set().min
+    "#;
+    insta::assert_snapshot!(eval_pkl_result(source));
+}
+
+#[test]
+fn test_set_min_by_max_by() {
+    let source = r#"
+        s = Set(1, 2, 3)
+        r1 = s.minBy((it) -> it)
+        r2 = s.minBy((it) -> -it)
+        r3 = s.maxBy((it) -> it)
+        r4 = s.maxBy((it) -> -it)
+        r5 = Set("Pigeon", "Barn Owl", "Parrot").minBy((it) -> it.length)
+        r6 = Set("Pigeon", "Barn Owl", "Parrot").maxBy((it) -> it.length)
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_set_repeat() {
+    let source = r#"
+        s = Set(1, 2, 3)
+        r1 = s.repeat(0)
+        r2 = s.repeat(1)
+        r3 = s.repeat(3)
+        r4 = Set().repeat(5)
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_set_reverse() {
+    let source = r#"
+        s = Set(1, 2, 3)
+        r1 = s.reverse()
+        r2 = Set().reverse()
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_set_flatten() {
+    let source = r#"
+        r1 = Set(List(1, 2), List(3, 4)).flatten()
+        r2 = Set(Set(1, 2), Set(3, 4)).flatten()
+        r3 = Set(List(), Set()).flatten()
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_set_to_map() {
+    let source = r#"
+        s = Set(1, 2, 3)
+        r1 = s.toMap((x) -> x, (x) -> 2 * x)
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+// =============================================================================
+// Regex upstream tests - comprehensive
+// =============================================================================
+
+#[test]
+fn test_regex_group_count() {
+    let source = r#"
+        r1 = Regex("").groupCount
+        r2 = Regex("(?i)abc").groupCount
+        r3 = Regex("a(\\s*)b(\\s*)c").groupCount
+        r4 = Regex("a(?:\\s*)b").groupCount
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_regex_find_matches_in() {
+    let source = r#"
+        r1 = Regex("\\[\\*\\]").findMatchesIn("[*] ... [*]")
+        r2 = Regex("").findMatchesIn("[*]")
+        r3 = Regex("\\w+").findMatchesIn("abc def ghi")
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_regex_find_matches_with_groups() {
+    let source = r#"
+        r1 = Regex("foo(\\w*)bar(\\w*)").findMatchesIn("fooPigeonbarBarnOwl")
+        r2 = Regex("(abc)|(def)").findMatchesIn("xxxabcxxxdefxxxabc")
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_regex_match_entire() {
+    let source = r#"
+        r1 = Regex("(\\d+)\\w+").matchEntire("123abc")
+        r2 = Regex("(\\d+)\\w+").matchEntire("123abc!!!")
+        r3 = Regex("abc").matchEntire("abc")
+        r4 = Regex("abc").matchEntire("abcd")
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_regex_pattern() {
+    let source = r#"
+        r1 = Regex("").pattern
+        r2 = Regex("(?i)abc").pattern
+        r3 = Regex("a(\\s*)b(\\s*)c").pattern
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+// =============================================================================
+// Duration/DataSize sort and comparison via Set
+// =============================================================================
+
+#[test]
+fn test_set_sort_durations() {
+    let source = r#"
+        r1 = Set(11.s, 100.ms, 3.d).sort()
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_set_sort_datasizes() {
+    let source = r#"
+        r1 = Set(11.gb, 100.mb, 12.tb).sort()
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_set_min_max_durations() {
+    let source = r#"
+        r_min = Set(11.s, 100.ms, 3.d).min
+        r_max = Set(11.s, 100.ms, 3.d).max
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_set_min_max_datasizes() {
+    let source = r#"
+        r_min = Set(11.gb, 100.mb, 12.tb).min
+        r_max = Set(11.gb, 100.mb, 12.tb).max
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+// =============================================================================
+// Map additional upstream tests
+// =============================================================================
+
+#[test]
+fn test_map_get_or_null() {
+    let source = r#"
+        m = Map("one", 1, "two", 2, "three", 3)
+        r1 = m.getOrNull("one")
+        r2 = m.getOrNull("five")
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_map_every_any() {
+    let source = r#"
+        m = Map("one", 1, "two", 2, "three", 3)
+        r1 = m.every((k, v) -> v < 10)
+        r2 = m.every((k, v) -> k.contains("o"))
+        r3 = m.any((k, v) -> k.contains("o"))
+        r4 = Map().any((k, v) -> true)
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_map_map_to_pairs() {
+    let source = r#"
+        m = Map("one", 1, "two", 2)
+        r1 = m.map((k, v) -> Pair(k, v * 3))
+        r2 = m.map((k, v) -> Pair(v, k))
     "#;
     insta::assert_snapshot!(eval_pkl(source));
 }

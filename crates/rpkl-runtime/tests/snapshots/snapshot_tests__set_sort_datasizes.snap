@@ -1,0 +1,11 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+expression: eval_pkl(source)
+---
+{
+  "r1": [
+    "100mb",
+    "11gb",
+    "12tb"
+  ]
+}

@@ -112,6 +112,56 @@ impl DataSizeUnit {
         }
     }
 
+    /// Returns true if this is a binary unit (b, kib, mib, gib, tib, pib)
+    pub fn is_binary(self) -> bool {
+        matches!(
+            self,
+            DataSizeUnit::Bytes
+                | DataSizeUnit::Kibibytes
+                | DataSizeUnit::Mebibytes
+                | DataSizeUnit::Gibibytes
+                | DataSizeUnit::Tebibytes
+                | DataSizeUnit::Pebibytes
+        )
+    }
+
+    /// Returns true if this is a decimal unit (b, kb, mb, gb, tb, pb)
+    pub fn is_decimal(self) -> bool {
+        matches!(
+            self,
+            DataSizeUnit::Bytes
+                | DataSizeUnit::Kilobytes
+                | DataSizeUnit::Megabytes
+                | DataSizeUnit::Gigabytes
+                | DataSizeUnit::Terabytes
+                | DataSizeUnit::Petabytes
+        )
+    }
+
+    /// Returns the corresponding binary unit for this unit's scale
+    pub fn to_binary(self) -> Self {
+        match self {
+            DataSizeUnit::Bytes => DataSizeUnit::Bytes,
+            DataSizeUnit::Kilobytes | DataSizeUnit::Kibibytes => DataSizeUnit::Kibibytes,
+            DataSizeUnit::Megabytes | DataSizeUnit::Mebibytes => DataSizeUnit::Mebibytes,
+            DataSizeUnit::Gigabytes | DataSizeUnit::Gibibytes => DataSizeUnit::Gibibytes,
+            DataSizeUnit::Terabytes | DataSizeUnit::Tebibytes => DataSizeUnit::Tebibytes,
+            DataSizeUnit::Petabytes | DataSizeUnit::Pebibytes => DataSizeUnit::Pebibytes,
+        }
+    }
+
+    /// Returns the corresponding decimal unit for this unit's scale
+    pub fn to_decimal(self) -> Self {
+        match self {
+            DataSizeUnit::Bytes => DataSizeUnit::Bytes,
+            DataSizeUnit::Kilobytes | DataSizeUnit::Kibibytes => DataSizeUnit::Kilobytes,
+            DataSizeUnit::Megabytes | DataSizeUnit::Mebibytes => DataSizeUnit::Megabytes,
+            DataSizeUnit::Gigabytes | DataSizeUnit::Gibibytes => DataSizeUnit::Gigabytes,
+            DataSizeUnit::Terabytes | DataSizeUnit::Tebibytes => DataSizeUnit::Terabytes,
+            DataSizeUnit::Petabytes | DataSizeUnit::Pebibytes => DataSizeUnit::Petabytes,
+        }
+    }
+
     /// Parse a data size unit from its suffix string
     pub fn from_suffix(s: &str) -> Option<Self> {
         match s {
@@ -338,6 +388,50 @@ impl VmValue {
             VmValue::Null => false,
             VmValue::Boolean(b) => *b,
             _ => true,
+        }
+    }
+
+    /// Compare two values for ordering (used by sort, min, max, etc.)
+    pub fn compare_to(&self, other: &VmValue) -> Result<Ordering, crate::EvalError> {
+        match (self, other) {
+            (VmValue::Int(a), VmValue::Int(b)) => Ok(a.cmp(b)),
+            (VmValue::Float(a), VmValue::Float(b)) => {
+                Ok(a.partial_cmp(b).unwrap_or(Ordering::Equal))
+            }
+            (VmValue::Int(a), VmValue::Float(b)) => {
+                let af = *a as f64;
+                Ok(af.partial_cmp(b).unwrap_or(Ordering::Equal))
+            }
+            (VmValue::Float(a), VmValue::Int(b)) => {
+                let bf = *b as f64;
+                Ok(a.partial_cmp(&bf).unwrap_or(Ordering::Equal))
+            }
+            (VmValue::String(a), VmValue::String(b)) => Ok(a.cmp(b)),
+            (
+                VmValue::Duration { value: av, unit: au },
+                VmValue::Duration { value: bv, unit: bu },
+            ) => {
+                let a_nanos = av * au.to_nanos_factor();
+                let b_nanos = bv * bu.to_nanos_factor();
+                Ok(a_nanos
+                    .partial_cmp(&b_nanos)
+                    .unwrap_or(Ordering::Equal))
+            }
+            (
+                VmValue::DataSize { value: av, unit: au },
+                VmValue::DataSize { value: bv, unit: bu },
+            ) => {
+                let a_bytes = av * au.to_bytes_factor();
+                let b_bytes = bv * bu.to_bytes_factor();
+                Ok(a_bytes
+                    .partial_cmp(&b_bytes)
+                    .unwrap_or(Ordering::Equal))
+            }
+            _ => Err(crate::EvalError::InvalidOperation(format!(
+                "Cannot compare {} and {}",
+                self.type_name(),
+                other.type_name()
+            ))),
         }
     }
 }

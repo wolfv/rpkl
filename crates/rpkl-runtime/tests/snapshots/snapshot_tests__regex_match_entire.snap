@@ -1,0 +1,26 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+expression: eval_pkl(source)
+---
+{
+  "r1": {
+    "value": "123abc",
+    "start": 0,
+    "end": 6,
+    "groups": [
+      {
+        "value": "123",
+        "start": 0,
+        "end": 3
+      }
+    ]
+  },
+  "r2": null,
+  "r3": {
+    "value": "abc",
+    "start": 0,
+    "end": 3,
+    "groups": []
+  },
+  "r4": null
+}

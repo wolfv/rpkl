@@ -1,6 +1,15 @@
 ---
 source: crates/rpkl-runtime/tests/snapshot_tests.rs
-assertion_line: 3708
-expression: eval_pkl_result(source)
+expression: eval_pkl(source)
 ---
-Force error: Invalid operation: Cannot access member 'matchEntire' on Regex
+{
+  "r": "[0-9]+",
+  "matches_full": {
+    "value": "12345",
+    "start": 0,
+    "end": 5,
+    "groups": []
+  },
+  "matches_none": null,
+  "find_in": true
+}

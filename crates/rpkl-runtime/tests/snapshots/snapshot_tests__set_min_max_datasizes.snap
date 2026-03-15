@@ -1,0 +1,8 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+expression: eval_pkl(source)
+---
+{
+  "r_min": "100mb",
+  "r_max": "12tb"
+}

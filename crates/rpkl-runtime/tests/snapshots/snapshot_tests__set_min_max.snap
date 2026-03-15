@@ -1,0 +1,17 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+expression: eval_pkl(source)
+---
+{
+  "s": [
+    1,
+    2,
+    3
+  ],
+  "r_min": 1,
+  "r_max": 3,
+  "r_str_min": "Barn Owl",
+  "r_str_max": "Pigeon",
+  "r_float_min": -8.4,
+  "r_float_max": 42.0
+}

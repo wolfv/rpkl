@@ -1484,6 +1484,7 @@ dependencies = [
  "indexmap",
  "insta",
  "once_cell",
+ "regex",
  "reqwest",
  "rpkl-parser",
  "rpkl-stdlib",

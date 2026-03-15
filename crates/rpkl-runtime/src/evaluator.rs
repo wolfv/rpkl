@@ -1296,17 +1296,53 @@ impl Evaluator {
             VmValue::Duration { value, unit } => match member {
                 "value" => Ok(VmValue::Float(*value)),
                 "unit" => Ok(VmValue::String(Arc::from(unit.suffix()))),
-                "isPositive" => Ok(VmValue::Boolean(*value > 0.0)),
+                "isPositive" => Ok(VmValue::Boolean(*value >= 0.0)),
                 "isNegative" => Ok(VmValue::Boolean(*value < 0.0)),
                 "isZero" => Ok(VmValue::Boolean(*value == 0.0)),
+                "isoString" => {
+                    // Convert to total seconds
+                    let nanos = *value * unit.to_nanos_factor();
+                    if nanos.is_nan() || nanos.is_infinite() {
+                        return Err(EvalError::InvalidOperation(
+                            "Cannot convert non-finite duration to ISO string".to_string(),
+                        ));
+                    }
+                    let total_secs = nanos / 1_000_000_000.0;
+                    let negative = total_secs < 0.0;
+                    let abs_secs = total_secs.abs();
+                    let hours = (abs_secs / 3600.0).floor() as u64;
+                    let remaining = abs_secs - hours as f64 * 3600.0;
+                    let minutes = (remaining / 60.0).floor() as u64;
+                    let secs = remaining - minutes as f64 * 60.0;
+                    let mut result = String::new();
+                    if negative {
+                        result.push('-');
+                    }
+                    result.push_str("PT");
+                    if hours > 0 {
+                        result.push_str(&format!("{}H", hours));
+                    }
+                    if minutes > 0 {
+                        result.push_str(&format!("{}M", minutes));
+                    }
+                    // Always include seconds part, or if no hours/minutes
+                    if secs != 0.0 || (hours == 0 && minutes == 0) {
+                        // Format seconds - remove trailing zeros
+                        let s = format!("{}", secs);
+                        result.push_str(&format!("{}S", s));
+                    }
+                    Ok(VmValue::string(result))
+                }
                 _ => Err(EvalError::undefined_prop(member)),
             },
             VmValue::DataSize { value, unit } => match member {
                 "value" => Ok(VmValue::Float(*value)),
                 "unit" => Ok(VmValue::String(Arc::from(unit.suffix()))),
-                "isPositive" => Ok(VmValue::Boolean(*value > 0.0)),
+                "isPositive" => Ok(VmValue::Boolean(*value >= 0.0)),
                 "isNegative" => Ok(VmValue::Boolean(*value < 0.0)),
                 "isZero" => Ok(VmValue::Boolean(*value == 0.0)),
+                "isBinaryUnit" => Ok(VmValue::Boolean(unit.is_binary())),
+                "isDecimalUnit" => Ok(VmValue::Boolean(unit.is_decimal())),
                 _ => Err(EvalError::undefined_prop(member)),
             },
             VmValue::Set(s) => match member {
@@ -1329,6 +1365,12 @@ impl Evaluator {
             },
             VmValue::Regex(r) => match member {
                 "pattern" => Ok(VmValue::String(Arc::from(r.pattern.as_str()))),
+                "groupCount" => {
+                    // Count capturing groups in the regex pattern
+                    let re = regex::Regex::new(&r.pattern)
+                        .map_err(|e| EvalError::InvalidOperation(format!("Invalid regex: {}", e)))?;
+                    Ok(VmValue::Int(re.captures_len() as i64 - 1))
+                }
                 _ => Err(EvalError::InvalidOperation(format!(
                     "Cannot access member '{}' on Regex",
                     member
