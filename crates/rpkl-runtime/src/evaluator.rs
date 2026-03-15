@@ -1165,13 +1165,10 @@ impl Evaluator {
                             "Cannot get min of empty list".to_string(),
                         ))
                     } else {
-                        // For now, assume numeric comparison
                         let mut min = l[0].clone();
                         for v in l.iter().skip(1) {
-                            if let (Some(a), Some(b)) = (v.as_float(), min.as_float()) {
-                                if a < b {
-                                    min = v.clone();
-                                }
+                            if v.compare_to(&min).unwrap_or(std::cmp::Ordering::Equal) == std::cmp::Ordering::Less {
+                                min = v.clone();
                             }
                         }
                         Ok(min)
@@ -1185,10 +1182,8 @@ impl Evaluator {
                     } else {
                         let mut max = l[0].clone();
                         for v in l.iter().skip(1) {
-                            if let (Some(a), Some(b)) = (v.as_float(), max.as_float()) {
-                                if a > b {
-                                    max = v.clone();
-                                }
+                            if v.compare_to(&max).unwrap_or(std::cmp::Ordering::Equal) == std::cmp::Ordering::Greater {
+                                max = v.clone();
                             }
                         }
                         Ok(max)

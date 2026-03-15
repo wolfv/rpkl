@@ -1,0 +1,16 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+expression: eval_pkl(source)
+---
+{
+  "r1": false,
+  "r2": true,
+  "r3": false,
+  "r4": false,
+  "r5": false,
+  "r6": true,
+  "r7": true,
+  "r8": false,
+  "r9": false,
+  "r10": true
+}
