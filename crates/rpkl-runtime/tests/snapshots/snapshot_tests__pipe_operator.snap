@@ -1,0 +1,11 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 1168
+expression: eval_pkl_result(source)
+---
+{
+  "double": "<function>",
+  "add1": "<function>",
+  "result": 10,
+  "chained": 11
+}

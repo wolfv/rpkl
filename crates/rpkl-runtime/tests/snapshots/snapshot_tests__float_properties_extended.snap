@@ -1,0 +1,16 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 1292
+expression: eval_pkl(source)
+---
+{
+  "f": 3.14,
+  "is_finite": true,
+  "is_infinite": false,
+  "is_nan": false,
+  "is_positive": true,
+  "is_negative": false,
+  "is_zero": false,
+  "abs_val": 3.14,
+  "sign_val": -1.0
+}

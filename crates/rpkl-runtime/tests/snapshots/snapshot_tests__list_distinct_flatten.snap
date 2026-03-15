@@ -1,0 +1,36 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 1681
+expression: eval_pkl(source)
+---
+{
+  "dup_items": [
+    1,
+    2,
+    2,
+    3,
+    3,
+    3
+  ],
+  "distinct": [
+    1,
+    2,
+    3
+  ],
+  "nested": [
+    [
+      1,
+      2
+    ],
+    [
+      3,
+      4
+    ]
+  ],
+  "flat": [
+    1,
+    2,
+    3,
+    4
+  ]
+}

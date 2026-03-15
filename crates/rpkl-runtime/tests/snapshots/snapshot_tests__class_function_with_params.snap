@@ -1,0 +1,13 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 1922
+expression: eval_pkl(source)
+---
+{
+  "calc": {
+    "add": "<function>",
+    "multiply": "<function>"
+  },
+  "sum": 7,
+  "product": 30
+}

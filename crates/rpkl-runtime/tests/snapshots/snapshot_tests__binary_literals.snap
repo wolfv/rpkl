@@ -1,0 +1,10 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 1133
+expression: eval_pkl(source)
+---
+{
+  "bin1": 10,
+  "bin2": 255,
+  "bin3": 0
+}

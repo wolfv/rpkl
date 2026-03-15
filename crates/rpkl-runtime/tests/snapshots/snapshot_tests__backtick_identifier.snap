@@ -1,0 +1,9 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 1791
+expression: eval_pkl_result(source)
+---
+{
+  "for": "value",
+  "result": "value"
+}

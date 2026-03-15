@@ -1,0 +1,19 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 1636
+expression: eval_pkl(source)
+---
+{
+  "items": [
+    10,
+    20,
+    30,
+    40,
+    50
+  ],
+  "evens": [
+    10,
+    30,
+    50
+  ]
+}

@@ -1,0 +1,11 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 1357
+expression: eval_pkl(source)
+---
+{
+  "d": "5s",
+  "val": 5.0,
+  "unit": "s",
+  "is_pos": true
+}

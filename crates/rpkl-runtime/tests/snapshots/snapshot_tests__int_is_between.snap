@@ -1,0 +1,12 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 1319
+expression: eval_pkl(source)
+---
+{
+  "in_range": true,
+  "at_lower": true,
+  "at_upper": true,
+  "below": false,
+  "above": false
+}

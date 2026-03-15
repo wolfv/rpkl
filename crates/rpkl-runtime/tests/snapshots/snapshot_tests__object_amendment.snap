@@ -1,0 +1,15 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 1829
+expression: eval_pkl(source)
+---
+{
+  "base": {
+    "host": "localhost",
+    "port": 8080
+  },
+  "amended": {
+    "host": "localhost",
+    "port": 9090
+  }
+}

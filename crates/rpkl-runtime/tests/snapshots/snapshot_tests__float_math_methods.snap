@@ -1,0 +1,13 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 2091
+expression: eval_pkl(source)
+---
+{
+  "sqrt_val": 5.0,
+  "cbrt_val": 3.0,
+  "ceil_val": 3.0,
+  "floor_val": 2.0,
+  "round_val": 3.0,
+  "truncate_val": 2.0
+}

@@ -1,0 +1,13 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 1811
+expression: eval_pkl(source)
+---
+{
+  "config": {
+    "host": "localhost",
+    "port": 8080,
+    "url": "<function>"
+  },
+  "url": "http://localhost:8080"
+}

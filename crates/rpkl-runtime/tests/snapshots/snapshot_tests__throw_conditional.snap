@@ -1,0 +1,6 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 1225
+expression: eval_pkl_result(source)
+---
+Force error: User exception: x must be non-negative

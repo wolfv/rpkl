@@ -1,0 +1,13 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 2431
+expression: eval_pkl(source)
+---
+{
+  "s": "ABC",
+  "codepoints": [
+    65,
+    66,
+    67
+  ]
+}

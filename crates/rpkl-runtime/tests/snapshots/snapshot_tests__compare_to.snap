@@ -1,0 +1,10 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 2293
+expression: eval_pkl(source)
+---
+{
+  "less": -1,
+  "equal": 0,
+  "greater": 1
+}

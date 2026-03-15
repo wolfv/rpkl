@@ -1,0 +1,21 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 1846
+expression: eval_pkl_result(source)
+---
+{
+  "first": [
+    1,
+    2
+  ],
+  "second": [
+    3,
+    4
+  ],
+  "combined": [
+    1,
+    2,
+    3,
+    4
+  ]
+}

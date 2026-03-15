@@ -1,0 +1,17 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 2175
+expression: eval_pkl(source)
+---
+{
+  "tags": [
+    {
+      "name": "urgent",
+      "color": "red"
+    },
+    {
+      "name": "low",
+      "color": "gray"
+    }
+  ]
+}

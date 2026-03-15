@@ -1,0 +1,10 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 1143
+expression: eval_pkl(source)
+---
+{
+  "oct1": 63,
+  "oct2": 8,
+  "oct3": 493
+}

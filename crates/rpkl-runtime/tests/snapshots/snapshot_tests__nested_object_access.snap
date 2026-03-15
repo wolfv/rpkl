@@ -1,0 +1,18 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 1961
+expression: eval_pkl(source)
+---
+{
+  "config": {
+    "database": {
+      "host": "localhost",
+      "port": 5432
+    },
+    "cache": {
+      "ttl": "300s"
+    }
+  },
+  "db_host": "localhost",
+  "cache_ttl": "300s"
+}

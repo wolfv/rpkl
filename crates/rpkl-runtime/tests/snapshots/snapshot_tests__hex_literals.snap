@@ -1,0 +1,10 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 1123
+expression: eval_pkl(source)
+---
+{
+  "hex1": 255,
+  "hex2": 16,
+  "hex3": 57005
+}

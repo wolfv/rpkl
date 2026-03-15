@@ -1,0 +1,10 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 1474
+expression: eval_pkl(source)
+---
+{
+  "idx": 6,
+  "last_idx": 6,
+  "not_found": -1
+}

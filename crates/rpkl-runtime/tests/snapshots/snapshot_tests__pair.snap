@@ -1,0 +1,15 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 1543
+expression: eval_pkl(source)
+---
+{
+  "p": [
+    "key",
+    42
+  ],
+  "k": "key",
+  "v": 42,
+  "k2": "key",
+  "v2": 42
+}

@@ -1,0 +1,10 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 1204
+expression: eval_pkl_result(source)
+---
+{
+  "name": "hello",
+  "len_of_value": 5,
+  "len_of_null": null
+}
