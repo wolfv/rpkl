@@ -325,24 +325,78 @@ impl Evaluator {
         match module_name {
             "math" => {
                 let obj = VmObject::new_dynamic(Scope::new());
-                obj.add_property("pi".into(), ObjMember::with_value(VmValue::Float(std::f64::consts::PI)));
-                obj.add_property("e".into(), ObjMember::with_value(VmValue::Float(std::f64::consts::E)));
-                obj.add_property("maxInt".into(), ObjMember::with_value(VmValue::Int(i64::MAX)));
-                obj.add_property("minInt".into(), ObjMember::with_value(VmValue::Int(i64::MIN)));
-                obj.add_property("maxFiniteFloat".into(), ObjMember::with_value(VmValue::Float(f64::MAX)));
-                obj.add_property("minFiniteFloat".into(), ObjMember::with_value(VmValue::Float(f64::MIN)));
-                obj.add_property("maxInt8".into(), ObjMember::with_value(VmValue::Int(i8::MAX as i64)));
-                obj.add_property("minInt8".into(), ObjMember::with_value(VmValue::Int(i8::MIN as i64)));
-                obj.add_property("maxInt16".into(), ObjMember::with_value(VmValue::Int(i16::MAX as i64)));
-                obj.add_property("minInt16".into(), ObjMember::with_value(VmValue::Int(i16::MIN as i64)));
-                obj.add_property("maxInt32".into(), ObjMember::with_value(VmValue::Int(i32::MAX as i64)));
-                obj.add_property("minInt32".into(), ObjMember::with_value(VmValue::Int(i32::MIN as i64)));
-                obj.add_property("maxUInt8".into(), ObjMember::with_value(VmValue::Int(u8::MAX as i64)));
-                obj.add_property("maxUInt16".into(), ObjMember::with_value(VmValue::Int(u16::MAX as i64)));
-                obj.add_property("maxUInt32".into(), ObjMember::with_value(VmValue::Int(u32::MAX as i64)));
-                obj.add_property("maxUInt".into(), ObjMember::with_value(VmValue::Int(u64::MAX as i64)));
-                obj.add_property("Infinity".into(), ObjMember::with_value(VmValue::Float(f64::INFINITY)));
-                obj.add_property("NaN".into(), ObjMember::with_value(VmValue::Float(f64::NAN)));
+                obj.add_property(
+                    "pi".into(),
+                    ObjMember::with_value(VmValue::Float(std::f64::consts::PI)),
+                );
+                obj.add_property(
+                    "e".into(),
+                    ObjMember::with_value(VmValue::Float(std::f64::consts::E)),
+                );
+                obj.add_property(
+                    "maxInt".into(),
+                    ObjMember::with_value(VmValue::Int(i64::MAX)),
+                );
+                obj.add_property(
+                    "minInt".into(),
+                    ObjMember::with_value(VmValue::Int(i64::MIN)),
+                );
+                obj.add_property(
+                    "maxFiniteFloat".into(),
+                    ObjMember::with_value(VmValue::Float(f64::MAX)),
+                );
+                obj.add_property(
+                    "minFiniteFloat".into(),
+                    ObjMember::with_value(VmValue::Float(f64::MIN)),
+                );
+                obj.add_property(
+                    "maxInt8".into(),
+                    ObjMember::with_value(VmValue::Int(i8::MAX as i64)),
+                );
+                obj.add_property(
+                    "minInt8".into(),
+                    ObjMember::with_value(VmValue::Int(i8::MIN as i64)),
+                );
+                obj.add_property(
+                    "maxInt16".into(),
+                    ObjMember::with_value(VmValue::Int(i16::MAX as i64)),
+                );
+                obj.add_property(
+                    "minInt16".into(),
+                    ObjMember::with_value(VmValue::Int(i16::MIN as i64)),
+                );
+                obj.add_property(
+                    "maxInt32".into(),
+                    ObjMember::with_value(VmValue::Int(i32::MAX as i64)),
+                );
+                obj.add_property(
+                    "minInt32".into(),
+                    ObjMember::with_value(VmValue::Int(i32::MIN as i64)),
+                );
+                obj.add_property(
+                    "maxUInt8".into(),
+                    ObjMember::with_value(VmValue::Int(u8::MAX as i64)),
+                );
+                obj.add_property(
+                    "maxUInt16".into(),
+                    ObjMember::with_value(VmValue::Int(u16::MAX as i64)),
+                );
+                obj.add_property(
+                    "maxUInt32".into(),
+                    ObjMember::with_value(VmValue::Int(u32::MAX as i64)),
+                );
+                obj.add_property(
+                    "maxUInt".into(),
+                    ObjMember::with_value(VmValue::Int(u64::MAX as i64)),
+                );
+                obj.add_property(
+                    "Infinity".into(),
+                    ObjMember::with_value(VmValue::Float(f64::INFINITY)),
+                );
+                obj.add_property(
+                    "NaN".into(),
+                    ObjMember::with_value(VmValue::Float(f64::NAN)),
+                );
                 Ok(VmValue::Object(Arc::new(obj)))
             }
             _ => Err(EvalError::IoError(format!(
@@ -604,15 +658,17 @@ impl Evaluator {
                     let method_name = &member.node;
 
                     // Handle Lambda.apply() and ExternalFunc.apply()
-                    if method_name == "apply" {
-                        if matches!(&base_value, VmValue::Lambda(_) | VmValue::ExternalFunc { .. }) {
+                    if method_name == "apply"
+                        && matches!(
+                            &base_value,
+                            VmValue::Lambda(_) | VmValue::ExternalFunc { .. }
+                        ) {
                             let arg_values: Vec<VmValue> = args
                                 .iter()
                                 .map(|arg| self.eval_expr(arg, scope))
                                 .collect::<EvalResult<_>>()?;
                             return self.eval_call(&base_value, &arg_values, scope);
                         }
-                    }
 
                     // Handle module.catch(() -> expr) - catches errors and returns error message
                     if method_name == "catch" {
@@ -691,7 +747,10 @@ impl Evaluator {
                     }
                     let method_name = &member.node;
                     // Try external method lookup
-                    if let Some(ext_fn) = self.externals.get_method(base_value.type_name(), method_name) {
+                    if let Some(ext_fn) = self
+                        .externals
+                        .get_method(base_value.type_name(), method_name)
+                    {
                         let mut all_args = vec![base_value];
                         for arg in args {
                             all_args.push(self.eval_expr(arg, scope)?);
@@ -1167,7 +1226,9 @@ impl Evaluator {
                     } else {
                         let mut min = l[0].clone();
                         for v in l.iter().skip(1) {
-                            if v.compare_to(&min).unwrap_or(std::cmp::Ordering::Equal) == std::cmp::Ordering::Less {
+                            if v.compare_to(&min).unwrap_or(std::cmp::Ordering::Equal)
+                                == std::cmp::Ordering::Less
+                            {
                                 min = v.clone();
                             }
                         }
@@ -1182,7 +1243,9 @@ impl Evaluator {
                     } else {
                         let mut max = l[0].clone();
                         for v in l.iter().skip(1) {
-                            if v.compare_to(&max).unwrap_or(std::cmp::Ordering::Equal) == std::cmp::Ordering::Greater {
+                            if v.compare_to(&max).unwrap_or(std::cmp::Ordering::Equal)
+                                == std::cmp::Ordering::Greater
+                            {
                                 max = v.clone();
                             }
                         }
@@ -1298,25 +1361,79 @@ impl Evaluator {
             }
             VmValue::Float(f) => match member {
                 // Duration units
-                "ns" => Ok(VmValue::Duration { value: *f, unit: DurationUnit::Nanoseconds }),
-                "us" => Ok(VmValue::Duration { value: *f, unit: DurationUnit::Microseconds }),
-                "ms" => Ok(VmValue::Duration { value: *f, unit: DurationUnit::Milliseconds }),
-                "s" => Ok(VmValue::Duration { value: *f, unit: DurationUnit::Seconds }),
-                "min" => Ok(VmValue::Duration { value: *f, unit: DurationUnit::Minutes }),
-                "h" => Ok(VmValue::Duration { value: *f, unit: DurationUnit::Hours }),
-                "d" => Ok(VmValue::Duration { value: *f, unit: DurationUnit::Days }),
+                "ns" => Ok(VmValue::Duration {
+                    value: *f,
+                    unit: DurationUnit::Nanoseconds,
+                }),
+                "us" => Ok(VmValue::Duration {
+                    value: *f,
+                    unit: DurationUnit::Microseconds,
+                }),
+                "ms" => Ok(VmValue::Duration {
+                    value: *f,
+                    unit: DurationUnit::Milliseconds,
+                }),
+                "s" => Ok(VmValue::Duration {
+                    value: *f,
+                    unit: DurationUnit::Seconds,
+                }),
+                "min" => Ok(VmValue::Duration {
+                    value: *f,
+                    unit: DurationUnit::Minutes,
+                }),
+                "h" => Ok(VmValue::Duration {
+                    value: *f,
+                    unit: DurationUnit::Hours,
+                }),
+                "d" => Ok(VmValue::Duration {
+                    value: *f,
+                    unit: DurationUnit::Days,
+                }),
                 // DataSize units
-                "b" => Ok(VmValue::DataSize { value: *f, unit: DataSizeUnit::Bytes }),
-                "kb" => Ok(VmValue::DataSize { value: *f, unit: DataSizeUnit::Kilobytes }),
-                "mb" => Ok(VmValue::DataSize { value: *f, unit: DataSizeUnit::Megabytes }),
-                "gb" => Ok(VmValue::DataSize { value: *f, unit: DataSizeUnit::Gigabytes }),
-                "tb" => Ok(VmValue::DataSize { value: *f, unit: DataSizeUnit::Terabytes }),
-                "pb" => Ok(VmValue::DataSize { value: *f, unit: DataSizeUnit::Petabytes }),
-                "kib" => Ok(VmValue::DataSize { value: *f, unit: DataSizeUnit::Kibibytes }),
-                "mib" => Ok(VmValue::DataSize { value: *f, unit: DataSizeUnit::Mebibytes }),
-                "gib" => Ok(VmValue::DataSize { value: *f, unit: DataSizeUnit::Gibibytes }),
-                "tib" => Ok(VmValue::DataSize { value: *f, unit: DataSizeUnit::Tebibytes }),
-                "pib" => Ok(VmValue::DataSize { value: *f, unit: DataSizeUnit::Pebibytes }),
+                "b" => Ok(VmValue::DataSize {
+                    value: *f,
+                    unit: DataSizeUnit::Bytes,
+                }),
+                "kb" => Ok(VmValue::DataSize {
+                    value: *f,
+                    unit: DataSizeUnit::Kilobytes,
+                }),
+                "mb" => Ok(VmValue::DataSize {
+                    value: *f,
+                    unit: DataSizeUnit::Megabytes,
+                }),
+                "gb" => Ok(VmValue::DataSize {
+                    value: *f,
+                    unit: DataSizeUnit::Gigabytes,
+                }),
+                "tb" => Ok(VmValue::DataSize {
+                    value: *f,
+                    unit: DataSizeUnit::Terabytes,
+                }),
+                "pb" => Ok(VmValue::DataSize {
+                    value: *f,
+                    unit: DataSizeUnit::Petabytes,
+                }),
+                "kib" => Ok(VmValue::DataSize {
+                    value: *f,
+                    unit: DataSizeUnit::Kibibytes,
+                }),
+                "mib" => Ok(VmValue::DataSize {
+                    value: *f,
+                    unit: DataSizeUnit::Mebibytes,
+                }),
+                "gib" => Ok(VmValue::DataSize {
+                    value: *f,
+                    unit: DataSizeUnit::Gibibytes,
+                }),
+                "tib" => Ok(VmValue::DataSize {
+                    value: *f,
+                    unit: DataSizeUnit::Tebibytes,
+                }),
+                "pib" => Ok(VmValue::DataSize {
+                    value: *f,
+                    unit: DataSizeUnit::Pebibytes,
+                }),
                 // Properties
                 "isPositive" => Ok(VmValue::Boolean(*f > 0.0)),
                 "isNegative" => Ok(VmValue::Boolean(*f < 0.0)),
@@ -1421,8 +1538,9 @@ impl Evaluator {
                 "pattern" => Ok(VmValue::String(Arc::from(r.pattern.as_str()))),
                 "groupCount" => {
                     // Count capturing groups in the regex pattern
-                    let re = regex::Regex::new(&r.pattern)
-                        .map_err(|e| EvalError::InvalidOperation(format!("Invalid regex: {}", e)))?;
+                    let re = regex::Regex::new(&r.pattern).map_err(|e| {
+                        EvalError::InvalidOperation(format!("Invalid regex: {}", e))
+                    })?;
                     Ok(VmValue::Int(re.captures_len() as i64 - 1))
                 }
                 _ => Err(EvalError::InvalidOperation(format!(

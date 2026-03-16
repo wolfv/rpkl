@@ -63,8 +63,16 @@ pub fn register(registry: &mut ExternalRegistry) {
     // DataSize methods
     registry.register_method("DataSize", "toUnit", Arc::new(datasize_to_unit));
     registry.register_method("DataSize", "isBetween", Arc::new(datasize_is_between));
-    registry.register_method("DataSize", "toBinaryUnit", Arc::new(datasize_to_binary_unit));
-    registry.register_method("DataSize", "toDecimalUnit", Arc::new(datasize_to_decimal_unit));
+    registry.register_method(
+        "DataSize",
+        "toBinaryUnit",
+        Arc::new(datasize_to_binary_unit),
+    );
+    registry.register_method(
+        "DataSize",
+        "toDecimalUnit",
+        Arc::new(datasize_to_decimal_unit),
+    );
 
     // Regex methods
     registry.register_method("Regex", "findMatchesIn", Arc::new(regex_find_matches_in));
@@ -706,7 +714,9 @@ fn int_min(
     _eval: &rpkl_runtime::Evaluator,
     _scope: &rpkl_runtime::ScopeRef,
 ) -> EvalResult<VmValue> {
-    let this = args[0].as_int().ok_or_else(|| EvalError::type_error("Int", args[0].type_name()))?;
+    let this = args[0]
+        .as_int()
+        .ok_or_else(|| EvalError::type_error("Int", args[0].type_name()))?;
     let other = args.get(1).and_then(|v| v.as_int()).ok_or_else(|| {
         EvalError::type_error("Int", args.get(1).map_or("none", |v| v.type_name()))
     })?;
@@ -718,7 +728,9 @@ fn int_max(
     _eval: &rpkl_runtime::Evaluator,
     _scope: &rpkl_runtime::ScopeRef,
 ) -> EvalResult<VmValue> {
-    let this = args[0].as_int().ok_or_else(|| EvalError::type_error("Int", args[0].type_name()))?;
+    let this = args[0]
+        .as_int()
+        .ok_or_else(|| EvalError::type_error("Int", args[0].type_name()))?;
     let other = args.get(1).and_then(|v| v.as_int()).ok_or_else(|| {
         EvalError::type_error("Int", args.get(1).map_or("none", |v| v.type_name()))
     })?;
@@ -730,7 +742,9 @@ fn float_min(
     _eval: &rpkl_runtime::Evaluator,
     _scope: &rpkl_runtime::ScopeRef,
 ) -> EvalResult<VmValue> {
-    let this = args[0].as_float().ok_or_else(|| EvalError::type_error("Float", args[0].type_name()))?;
+    let this = args[0]
+        .as_float()
+        .ok_or_else(|| EvalError::type_error("Float", args[0].type_name()))?;
     let other = args.get(1).and_then(|v| v.as_float()).ok_or_else(|| {
         EvalError::type_error("Float", args.get(1).map_or("none", |v| v.type_name()))
     })?;
@@ -742,7 +756,9 @@ fn float_max(
     _eval: &rpkl_runtime::Evaluator,
     _scope: &rpkl_runtime::ScopeRef,
 ) -> EvalResult<VmValue> {
-    let this = args[0].as_float().ok_or_else(|| EvalError::type_error("Float", args[0].type_name()))?;
+    let this = args[0]
+        .as_float()
+        .ok_or_else(|| EvalError::type_error("Float", args[0].type_name()))?;
     let other = args.get(1).and_then(|v| v.as_float()).ok_or_else(|| {
         EvalError::type_error("Float", args.get(1).map_or("none", |v| v.type_name()))
     })?;
@@ -765,12 +781,7 @@ fn get_regex_arg(args: &[VmValue], idx: usize) -> EvalResult<Arc<rpkl_runtime::v
         })
 }
 
-fn make_regex_match(
-    value: &str,
-    start: usize,
-    end: usize,
-    groups: Vec<VmValue>,
-) -> VmValue {
+fn make_regex_match(value: &str, start: usize, end: usize, groups: Vec<VmValue>) -> VmValue {
     // Create a RegexMatch as a Dynamic object with properties: value, start, end, groups
     let obj = VmObject::new_dynamic(rpkl_runtime::Scope::new());
     obj.add_property(
@@ -818,10 +829,9 @@ fn regex_find_matches_in(
     _scope: &rpkl_runtime::ScopeRef,
 ) -> EvalResult<VmValue> {
     let regex_val = get_regex_arg(args, 0)?;
-    let input = args
-        .get(1)
-        .and_then(|v| v.as_string())
-        .ok_or_else(|| EvalError::type_error("String", args.get(1).map_or("none", |v| v.type_name())))?;
+    let input = args.get(1).and_then(|v| v.as_string()).ok_or_else(|| {
+        EvalError::type_error("String", args.get(1).map_or("none", |v| v.type_name()))
+    })?;
 
     let re = regex::Regex::new(&regex_val.pattern)
         .map_err(|e| EvalError::InvalidOperation(format!("Invalid regex: {}", e)))?;
@@ -854,10 +864,9 @@ fn regex_match_entire(
     _scope: &rpkl_runtime::ScopeRef,
 ) -> EvalResult<VmValue> {
     let regex_val = get_regex_arg(args, 0)?;
-    let input = args
-        .get(1)
-        .and_then(|v| v.as_string())
-        .ok_or_else(|| EvalError::type_error("String", args.get(1).map_or("none", |v| v.type_name())))?;
+    let input = args.get(1).and_then(|v| v.as_string()).ok_or_else(|| {
+        EvalError::type_error("String", args.get(1).map_or("none", |v| v.type_name()))
+    })?;
 
     // Anchor the regex to match entire string
     let anchored = format!("^(?:{})$", regex_val.pattern);

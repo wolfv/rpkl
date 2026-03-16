@@ -408,24 +408,32 @@ impl VmValue {
             }
             (VmValue::String(a), VmValue::String(b)) => Ok(a.cmp(b)),
             (
-                VmValue::Duration { value: av, unit: au },
-                VmValue::Duration { value: bv, unit: bu },
+                VmValue::Duration {
+                    value: av,
+                    unit: au,
+                },
+                VmValue::Duration {
+                    value: bv,
+                    unit: bu,
+                },
             ) => {
                 let a_nanos = av * au.to_nanos_factor();
                 let b_nanos = bv * bu.to_nanos_factor();
-                Ok(a_nanos
-                    .partial_cmp(&b_nanos)
-                    .unwrap_or(Ordering::Equal))
+                Ok(a_nanos.partial_cmp(&b_nanos).unwrap_or(Ordering::Equal))
             }
             (
-                VmValue::DataSize { value: av, unit: au },
-                VmValue::DataSize { value: bv, unit: bu },
+                VmValue::DataSize {
+                    value: av,
+                    unit: au,
+                },
+                VmValue::DataSize {
+                    value: bv,
+                    unit: bu,
+                },
             ) => {
                 let a_bytes = av * au.to_bytes_factor();
                 let b_bytes = bv * bu.to_bytes_factor();
-                Ok(a_bytes
-                    .partial_cmp(&b_bytes)
-                    .unwrap_or(Ordering::Equal))
+                Ok(a_bytes.partial_cmp(&b_bytes).unwrap_or(Ordering::Equal))
             }
             _ => Err(crate::EvalError::InvalidOperation(format!(
                 "Cannot compare {} and {}",

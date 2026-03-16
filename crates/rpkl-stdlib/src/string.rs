@@ -226,11 +226,17 @@ fn string_replace_all(
     let replacement = get_string_arg(args, 2)?;
     // Check if pattern is a Regex
     if let Some(regex_val) = args.get(1).and_then(|v| {
-        if let VmValue::Regex(r) = v { Some(r) } else { None }
+        if let VmValue::Regex(r) = v {
+            Some(r)
+        } else {
+            None
+        }
     }) {
         let re = regex::Regex::new(&regex_val.pattern)
             .map_err(|e| EvalError::InvalidOperation(format!("Invalid regex: {}", e)))?;
-        Ok(VmValue::string(re.replace_all(&this, replacement.as_ref()).to_string()))
+        Ok(VmValue::string(
+            re.replace_all(&this, replacement.as_ref()).to_string(),
+        ))
     } else {
         let pattern = get_string_arg(args, 1)?;
         Ok(VmValue::string(this.replace(&*pattern, &replacement)))
@@ -246,11 +252,17 @@ fn string_replace_first(
     let replacement = get_string_arg(args, 2)?;
     // Check if pattern is a Regex
     if let Some(regex_val) = args.get(1).and_then(|v| {
-        if let VmValue::Regex(r) = v { Some(r) } else { None }
+        if let VmValue::Regex(r) = v {
+            Some(r)
+        } else {
+            None
+        }
     }) {
         let re = regex::Regex::new(&regex_val.pattern)
             .map_err(|e| EvalError::InvalidOperation(format!("Invalid regex: {}", e)))?;
-        Ok(VmValue::string(re.replace(&this, replacement.as_ref()).to_string()))
+        Ok(VmValue::string(
+            re.replace(&this, replacement.as_ref()).to_string(),
+        ))
     } else {
         let pattern = get_string_arg(args, 1)?;
         Ok(VmValue::string(this.replacen(&*pattern, &replacement, 1)))
@@ -652,12 +664,23 @@ fn string_matches(
     _scope: &rpkl_runtime::ScopeRef,
 ) -> EvalResult<VmValue> {
     let this = get_string_arg(args, 0)?;
-    let regex_val = args.get(1).and_then(|v| {
-        if let VmValue::Regex(r) = v { Some(r) } else { None }
-    }).ok_or_else(|| EvalError::type_error("Regex", args.get(1).map_or("none", |v| v.type_name())))?;
+    let regex_val = args
+        .get(1)
+        .and_then(|v| {
+            if let VmValue::Regex(r) = v {
+                Some(r)
+            } else {
+                None
+            }
+        })
+        .ok_or_else(|| {
+            EvalError::type_error("Regex", args.get(1).map_or("none", |v| v.type_name()))
+        })?;
     let re = regex::Regex::new(&regex_val.pattern)
         .map_err(|e| EvalError::InvalidOperation(format!("Invalid regex: {}", e)))?;
-    let full_match = re.find(&this).is_some_and(|m| m.start() == 0 && m.end() == this.len());
+    let full_match = re
+        .find(&this)
+        .is_some_and(|m| m.start() == 0 && m.end() == this.len());
     Ok(VmValue::Boolean(full_match))
 }
 
@@ -736,7 +759,8 @@ fn string_base64_decoded(
 ) -> EvalResult<VmValue> {
     use base64::Engine;
     let this = get_string_arg(args, 0)?;
-    let decoded = base64::engine::general_purpose::STANDARD.decode(this.as_bytes())
+    let decoded = base64::engine::general_purpose::STANDARD
+        .decode(this.as_bytes())
         .map_err(|e| EvalError::InvalidOperation(format!("Invalid base64: {}", e)))?;
     let s = String::from_utf8(decoded)
         .map_err(|e| EvalError::InvalidOperation(format!("Invalid UTF-8: {}", e)))?;
