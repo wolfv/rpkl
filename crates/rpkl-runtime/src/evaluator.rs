@@ -662,13 +662,14 @@ impl Evaluator {
                         && matches!(
                             &base_value,
                             VmValue::Lambda(_) | VmValue::ExternalFunc { .. }
-                        ) {
-                            let arg_values: Vec<VmValue> = args
-                                .iter()
-                                .map(|arg| self.eval_expr(arg, scope))
-                                .collect::<EvalResult<_>>()?;
-                            return self.eval_call(&base_value, &arg_values, scope);
-                        }
+                        )
+                    {
+                        let arg_values: Vec<VmValue> = args
+                            .iter()
+                            .map(|arg| self.eval_expr(arg, scope))
+                            .collect::<EvalResult<_>>()?;
+                        return self.eval_call(&base_value, &arg_values, scope);
+                    }
 
                     // Handle module.catch(() -> expr) - catches errors and returns error message
                     if method_name == "catch" {
