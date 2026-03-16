@@ -1,0 +1,28 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+expression: eval_pkl(source)
+---
+{
+  "math": {
+    "pi": 3.141592653589793,
+    "e": 2.718281828459045,
+    "maxInt": 9223372036854775807,
+    "minInt": -9223372036854775808,
+    "maxFiniteFloat": 1.7976931348623157e308,
+    "minFiniteFloat": -1.7976931348623157e308,
+    "maxInt8": 127,
+    "minInt8": -128,
+    "maxInt16": 32767,
+    "minInt16": -32768,
+    "maxInt32": 2147483647,
+    "minInt32": -2147483648,
+    "maxUInt8": 255,
+    "maxUInt16": 65535,
+    "maxUInt32": 4294967295,
+    "maxUInt": -1,
+    "Infinity": null,
+    "NaN": null
+  },
+  "r_max": 1.7976931348623157e308,
+  "r_min": -1.7976931348623157e308
+}

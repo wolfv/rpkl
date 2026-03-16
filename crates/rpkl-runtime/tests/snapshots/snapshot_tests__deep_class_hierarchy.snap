@@ -1,0 +1,12 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 2129
+expression: eval_pkl(source)
+---
+{
+  "obj": {
+    "x": 10,
+    "y": 2,
+    "z": 3
+  }
+}

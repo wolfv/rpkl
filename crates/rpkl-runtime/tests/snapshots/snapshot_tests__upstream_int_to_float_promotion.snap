@@ -1,0 +1,13 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 2539
+expression: eval_pkl(source)
+---
+{
+  "add": 2.5,
+  "sub": 2.5,
+  "mul": 4.5,
+  "div": 3.5,
+  "compare": true,
+  "compare2": true
+}

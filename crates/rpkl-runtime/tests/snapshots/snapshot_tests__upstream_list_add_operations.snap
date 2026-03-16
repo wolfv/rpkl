@@ -1,0 +1,32 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 4603
+expression: eval_pkl(source)
+---
+{
+  "base": [
+    1,
+    2,
+    3
+  ],
+  "added": [
+    1,
+    2,
+    3,
+    4
+  ],
+  "added_all": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6
+  ],
+  "replaced": [
+    1,
+    20,
+    30,
+    3
+  ]
+}

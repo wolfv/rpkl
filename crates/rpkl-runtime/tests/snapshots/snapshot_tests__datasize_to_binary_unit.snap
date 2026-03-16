@@ -1,0 +1,14 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+expression: eval_pkl(source)
+---
+{
+  "r1": "0.9094947017729282pib",
+  "r2": "0.9313225746154785tib",
+  "r3": "0.95367431640625gib",
+  "r4": "0.9765625mib",
+  "r5": "1kib",
+  "r6": "1.024b",
+  "r7": "1.024pib",
+  "r8": "1.024tib"
+}

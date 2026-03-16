@@ -1,0 +1,11 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 2808
+expression: eval_pkl(source)
+---
+{
+  "x": 10,
+  "r1": "big",
+  "r2": "small",
+  "r3": "ten"
+}

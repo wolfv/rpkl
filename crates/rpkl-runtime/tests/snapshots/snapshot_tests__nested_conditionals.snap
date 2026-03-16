@@ -1,0 +1,9 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 2266
+expression: eval_pkl(source)
+---
+{
+  "x": 15,
+  "result": "medium"
+}

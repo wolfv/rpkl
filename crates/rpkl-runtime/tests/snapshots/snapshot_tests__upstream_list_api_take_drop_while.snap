@@ -1,0 +1,25 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 3278
+expression: eval_pkl(source)
+---
+{
+  "take_while": [
+    1,
+    2,
+    3
+  ],
+  "drop_while": [
+    4,
+    5
+  ],
+  "take_last_while": [
+    4,
+    5
+  ],
+  "drop_last_while": [
+    1,
+    2,
+    3
+  ]
+}

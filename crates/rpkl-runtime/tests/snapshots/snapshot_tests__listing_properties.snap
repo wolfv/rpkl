@@ -1,0 +1,16 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 1559
+expression: eval_pkl(source)
+---
+{
+  "items": [
+    1,
+    2,
+    3
+  ],
+  "empty": [],
+  "len": 3,
+  "is_empty": false,
+  "empty_is_empty": true
+}

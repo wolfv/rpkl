@@ -1,0 +1,6 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 1190
+expression: eval_pkl_result(source)
+---
+Force error: Null pointer exception: Non-null assertion failed

@@ -1113,7 +1113,13 @@ fn build_primary_expr(pair: Pair<Rule>) -> ParseResult<Expr> {
             })
         }
         Rule::identifier => {
-            let name = inner.as_str().to_string();
+            let raw = inner.as_str();
+            // Strip backticks from backtick identifiers (e.g., `class` -> class)
+            let name = if raw.starts_with('`') && raw.ends_with('`') {
+                raw[1..raw.len() - 1].to_string()
+            } else {
+                raw.to_string()
+            };
             Ok(Expr {
                 kind: ExprKind::Identifier(name),
                 span,

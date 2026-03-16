@@ -1,0 +1,12 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 2978
+expression: eval_pkl(source)
+---
+{
+  "to_float": 42.0,
+  "to_string": "42",
+  "to_radix_2": "11111111",
+  "to_radix_8": "377",
+  "to_radix_16": "ff"
+}

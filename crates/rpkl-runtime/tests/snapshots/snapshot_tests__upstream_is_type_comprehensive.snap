@@ -1,0 +1,19 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 3970
+expression: eval_pkl(source)
+---
+{
+  "r_int": true,
+  "r_float": true,
+  "r_string": true,
+  "r_bool": true,
+  "r_list": true,
+  "r_set": true,
+  "r_map": true,
+  "r_null": true,
+  "r_int_not_string": false,
+  "r_string_not_int": false,
+  "r_number_int": true,
+  "r_number_float": true
+}

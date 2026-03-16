@@ -1,0 +1,18 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 3947
+expression: eval_pkl(source)
+---
+{
+  "circle": {
+    "radius": 5.0,
+    "area": "<function>"
+  },
+  "rect": {
+    "width": 3.0,
+    "height": 4.0,
+    "area": "<function>"
+  },
+  "circle_area": 78.53975,
+  "rect_area": 12.0
+}

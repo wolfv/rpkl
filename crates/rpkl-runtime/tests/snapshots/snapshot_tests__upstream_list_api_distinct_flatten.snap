@@ -1,0 +1,19 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 3267
+expression: eval_pkl(source)
+---
+{
+  "distinct": [
+    1,
+    2,
+    3
+  ],
+  "flattened": [
+    1,
+    2,
+    3,
+    4,
+    5
+  ]
+}

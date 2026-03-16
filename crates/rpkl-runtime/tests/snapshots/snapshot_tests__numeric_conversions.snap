@@ -1,0 +1,12 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 2023
+expression: eval_pkl(source)
+---
+{
+  "int_val": 42,
+  "float_val": 3.14,
+  "int_to_float": 42.0,
+  "float_to_int": 3,
+  "int_to_int": 42
+}

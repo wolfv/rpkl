@@ -1,0 +1,12 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 2191
+expression: eval_pkl(source)
+---
+{
+  "prefix": "key",
+  "m": {
+    "key_1": 10,
+    "key_2": 20
+  }
+}

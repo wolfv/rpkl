@@ -1,0 +1,14 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 4073
+expression: eval_pkl(source)
+---
+{
+  "tab": "a\tb",
+  "newline": "a\nb",
+  "cr": "a\rb",
+  "backslash": "a\\b",
+  "quote": "a\"b",
+  "unicode_basic": "A",
+  "unicode_emoji": "😀"
+}

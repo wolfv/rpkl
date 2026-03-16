@@ -1,0 +1,18 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 4527
+expression: eval_pkl(source)
+---
+{
+  "m": {
+    "x": 10,
+    "y": 20,
+    "z": 30
+  },
+  "doubled": {
+    "x": 20,
+    "y": 40,
+    "z": 60
+  },
+  "sum_values": 60
+}

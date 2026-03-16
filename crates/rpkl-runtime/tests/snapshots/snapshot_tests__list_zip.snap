@@ -1,0 +1,31 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 1618
+expression: eval_pkl_result(source)
+---
+{
+  "a": [
+    1,
+    2,
+    3
+  ],
+  "b": [
+    "a",
+    "b",
+    "c"
+  ],
+  "zipped": [
+    [
+      1,
+      "a"
+    ],
+    [
+      2,
+      "b"
+    ],
+    [
+      3,
+      "c"
+    ]
+  ]
+}

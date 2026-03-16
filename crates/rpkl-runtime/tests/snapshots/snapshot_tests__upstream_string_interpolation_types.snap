@@ -1,0 +1,18 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 2842
+expression: eval_pkl(source)
+---
+{
+  "r_int": "42",
+  "r_float": "1.23",
+  "r_string": "Pigeon",
+  "r_bool": "false",
+  "r_duration": "1.23ns",
+  "r_datasize": "1.23mb",
+  "r_pair": "(Pair(1, 2))",
+  "r_list": "(List(1, 2, 3))",
+  "r_set": "(Set(1, 2, 3))",
+  "r_map": "(Map(1, 2, 3, 4))",
+  "r_null": "null"
+}

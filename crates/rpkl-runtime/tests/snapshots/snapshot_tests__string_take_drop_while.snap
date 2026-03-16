@@ -1,0 +1,11 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 1464
+expression: eval_pkl(source)
+---
+{
+  "taken": "abc",
+  "dropped": "def",
+  "take_last": "def",
+  "drop_last": "abc"
+}

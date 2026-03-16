@@ -1,0 +1,6 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 2883
+expression: eval_pkl_result(source)
+---
+Force error: Index out of bounds: 10 (length: 4)

@@ -1,0 +1,9 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 3140
+expression: eval_pkl(source)
+---
+{
+  "pad_start": "00042",
+  "pad_end": "42000"
+}

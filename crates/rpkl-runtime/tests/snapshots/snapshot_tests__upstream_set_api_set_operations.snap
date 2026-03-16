@@ -1,0 +1,30 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 3594
+expression: eval_pkl(source)
+---
+{
+  "s1": [
+    1,
+    2,
+    3
+  ],
+  "s2": [
+    2,
+    3,
+    4
+  ],
+  "intersection": [
+    2,
+    3
+  ],
+  "difference": [
+    1
+  ],
+  "union": [
+    1,
+    2,
+    3,
+    4
+  ]
+}

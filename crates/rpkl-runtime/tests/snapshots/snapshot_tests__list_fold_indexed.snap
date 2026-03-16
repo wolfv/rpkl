@@ -1,0 +1,13 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 1645
+expression: eval_pkl(source)
+---
+{
+  "items": [
+    10,
+    20,
+    30
+  ],
+  "result": 80
+}

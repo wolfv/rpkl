@@ -1,0 +1,13 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 4267
+expression: eval_pkl(source)
+---
+{
+  "obj": {
+    "inner": {
+      "value": 42
+    }
+  },
+  "result": 42
+}

@@ -1,0 +1,30 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+expression: eval_pkl(source)
+---
+{
+  "s": [
+    1,
+    2,
+    3
+  ],
+  "tw1": [
+    1,
+    2,
+    3
+  ],
+  "tw2": [],
+  "tw3": [
+    1,
+    2
+  ],
+  "dw1": [],
+  "dw2": [
+    1,
+    2,
+    3
+  ],
+  "dw3": [
+    3
+  ]
+}

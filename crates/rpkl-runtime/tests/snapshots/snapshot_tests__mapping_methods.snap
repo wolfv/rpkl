@@ -1,0 +1,16 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 1586
+expression: eval_pkl(source)
+---
+{
+  "m": {
+    "a": 1,
+    "b": 2,
+    "c": 3
+  },
+  "len": 3,
+  "is_empty": false,
+  "has_a": true,
+  "has_z": false
+}

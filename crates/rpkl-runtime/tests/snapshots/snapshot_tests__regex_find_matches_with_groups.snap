@@ -1,0 +1,78 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+expression: eval_pkl(source)
+---
+{
+  "r1": [
+    {
+      "value": "fooPigeonbarBarnOwl",
+      "start": 0,
+      "end": 19,
+      "groups": [
+        {
+          "value": "Pigeon",
+          "start": 3,
+          "end": 9
+        },
+        {
+          "value": "BarnOwl",
+          "start": 12,
+          "end": 19
+        }
+      ]
+    }
+  ],
+  "r2": [
+    {
+      "value": "abc",
+      "start": 3,
+      "end": 6,
+      "groups": [
+        {
+          "value": "abc",
+          "start": 3,
+          "end": 6
+        },
+        {
+          "value": null,
+          "start": 0,
+          "end": 0
+        }
+      ]
+    },
+    {
+      "value": "def",
+      "start": 9,
+      "end": 12,
+      "groups": [
+        {
+          "value": null,
+          "start": 0,
+          "end": 0
+        },
+        {
+          "value": "def",
+          "start": 9,
+          "end": 12
+        }
+      ]
+    },
+    {
+      "value": "abc",
+      "start": 15,
+      "end": 18,
+      "groups": [
+        {
+          "value": "abc",
+          "start": 15,
+          "end": 18
+        },
+        {
+          "value": null,
+          "start": 0,
+          "end": 0
+        }
+      ]
+    }
+  ]
+}

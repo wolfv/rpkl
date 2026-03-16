@@ -1,0 +1,10 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+expression: eval_pkl(source)
+---
+{
+  "r1": "h",
+  "r2": "o",
+  "r3": null,
+  "r4": "o"
+}

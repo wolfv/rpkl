@@ -318,6 +318,94 @@ impl Evaluator {
         Ok(VmValue::Object(obj))
     }
 
+    /// Create a built-in pkl: standard library module
+    fn create_stdlib_module(&self, module_name: &str) -> EvalResult<VmValue> {
+        use crate::object::VmObject;
+        use crate::scope::Scope;
+        match module_name {
+            "math" => {
+                let obj = VmObject::new_dynamic(Scope::new());
+                obj.add_property(
+                    "pi".into(),
+                    ObjMember::with_value(VmValue::Float(std::f64::consts::PI)),
+                );
+                obj.add_property(
+                    "e".into(),
+                    ObjMember::with_value(VmValue::Float(std::f64::consts::E)),
+                );
+                obj.add_property(
+                    "maxInt".into(),
+                    ObjMember::with_value(VmValue::Int(i64::MAX)),
+                );
+                obj.add_property(
+                    "minInt".into(),
+                    ObjMember::with_value(VmValue::Int(i64::MIN)),
+                );
+                obj.add_property(
+                    "maxFiniteFloat".into(),
+                    ObjMember::with_value(VmValue::Float(f64::MAX)),
+                );
+                obj.add_property(
+                    "minFiniteFloat".into(),
+                    ObjMember::with_value(VmValue::Float(f64::MIN)),
+                );
+                obj.add_property(
+                    "maxInt8".into(),
+                    ObjMember::with_value(VmValue::Int(i8::MAX as i64)),
+                );
+                obj.add_property(
+                    "minInt8".into(),
+                    ObjMember::with_value(VmValue::Int(i8::MIN as i64)),
+                );
+                obj.add_property(
+                    "maxInt16".into(),
+                    ObjMember::with_value(VmValue::Int(i16::MAX as i64)),
+                );
+                obj.add_property(
+                    "minInt16".into(),
+                    ObjMember::with_value(VmValue::Int(i16::MIN as i64)),
+                );
+                obj.add_property(
+                    "maxInt32".into(),
+                    ObjMember::with_value(VmValue::Int(i32::MAX as i64)),
+                );
+                obj.add_property(
+                    "minInt32".into(),
+                    ObjMember::with_value(VmValue::Int(i32::MIN as i64)),
+                );
+                obj.add_property(
+                    "maxUInt8".into(),
+                    ObjMember::with_value(VmValue::Int(u8::MAX as i64)),
+                );
+                obj.add_property(
+                    "maxUInt16".into(),
+                    ObjMember::with_value(VmValue::Int(u16::MAX as i64)),
+                );
+                obj.add_property(
+                    "maxUInt32".into(),
+                    ObjMember::with_value(VmValue::Int(u32::MAX as i64)),
+                );
+                obj.add_property(
+                    "maxUInt".into(),
+                    ObjMember::with_value(VmValue::Int(u64::MAX as i64)),
+                );
+                obj.add_property(
+                    "Infinity".into(),
+                    ObjMember::with_value(VmValue::Float(f64::INFINITY)),
+                );
+                obj.add_property(
+                    "NaN".into(),
+                    ObjMember::with_value(VmValue::Float(f64::NAN)),
+                );
+                Ok(VmValue::Object(Arc::new(obj)))
+            }
+            _ => Err(EvalError::IoError(format!(
+                "Standard library module 'pkl:{}' not yet supported",
+                module_name
+            ))),
+        }
+    }
+
     /// Process an import and return the name and value
     fn process_import(
         &self,
@@ -329,6 +417,18 @@ impl Evaluator {
             .uri
             .as_simple()
             .ok_or_else(|| EvalError::IoError("Import URI cannot be interpolated".to_string()))?;
+
+        // Handle pkl: standard library imports
+        if uri.starts_with("pkl:") {
+            let module_name = uri.strip_prefix("pkl:").unwrap();
+            let import_name = if let Some(alias) = &import.alias {
+                alias.node.clone()
+            } else {
+                module_name.to_string()
+            };
+            let value = self.create_stdlib_module(module_name)?;
+            return Ok((import_name, value));
+        }
 
         // Resolve the import path
         let resolved_path = self
@@ -488,7 +588,8 @@ impl Evaluator {
                 let (kind, class_info) = match class_ref {
                     Some(name) => {
                         let type_name = name.to_string();
-                        match type_name.as_str() {
+                        let base_type = type_name.split('<').next().unwrap_or(&type_name);
+                        match base_type {
                             "Listing" => (ObjectKind::Listing, None),
                             "Mapping" => (ObjectKind::Mapping, None),
                             "Dynamic" => (ObjectKind::Dynamic, None),
@@ -556,6 +657,33 @@ impl Evaluator {
                     let base_value = self.eval_expr(base, scope)?;
                     let method_name = &member.node;
 
+                    // Handle Lambda.apply() and ExternalFunc.apply()
+                    if method_name == "apply"
+                        && matches!(
+                            &base_value,
+                            VmValue::Lambda(_) | VmValue::ExternalFunc { .. }
+                        )
+                    {
+                        let arg_values: Vec<VmValue> = args
+                            .iter()
+                            .map(|arg| self.eval_expr(arg, scope))
+                            .collect::<EvalResult<_>>()?;
+                        return self.eval_call(&base_value, &arg_values, scope);
+                    }
+
+                    // Handle module.catch(() -> expr) - catches errors and returns error message
+                    if method_name == "catch" {
+                        if let ExprKind::Module = &base.kind {
+                            if args.len() == 1 {
+                                let lambda_value = self.eval_expr(&args[0], scope)?;
+                                match self.eval_call(&lambda_value, &[], scope) {
+                                    Ok(val) => return Ok(val),
+                                    Err(e) => return Ok(VmValue::string(format!("{}", e))),
+                                }
+                            }
+                        }
+                    }
+
                     // Try external method lookup first
                     if let Some(ext_fn) = self
                         .externals
@@ -604,6 +732,33 @@ impl Evaluator {
                     }
 
                     // Fall back to getting the member as a callable value
+                    let callee_value = self.eval_member_access(&base_value, method_name, scope)?;
+                    let arg_values: Vec<VmValue> = args
+                        .iter()
+                        .map(|arg| self.eval_expr(arg, scope))
+                        .collect::<EvalResult<_>>()?;
+                    return self.eval_call(&callee_value, &arg_values, scope);
+                }
+
+                // Handle optional method call (null?.method())
+                if let ExprKind::OptionalMemberAccess { base, member } = &callee.kind {
+                    let base_value = self.eval_expr(base, scope)?;
+                    if base_value.is_null() {
+                        return Ok(VmValue::Null);
+                    }
+                    let method_name = &member.node;
+                    // Try external method lookup
+                    if let Some(ext_fn) = self
+                        .externals
+                        .get_method(base_value.type_name(), method_name)
+                    {
+                        let mut all_args = vec![base_value];
+                        for arg in args {
+                            all_args.push(self.eval_expr(arg, scope)?);
+                        }
+                        return ext_fn(&all_args, self, scope);
+                    }
+                    // Fall back to member access
                     let callee_value = self.eval_member_access(&base_value, method_name, scope)?;
                     let arg_values: Vec<VmValue> = args
                         .iter()
@@ -943,6 +1098,29 @@ impl Evaluator {
             return ext_fn(std::slice::from_ref(base), self, scope);
         }
 
+        // For Object types, also check by kind (Listing, Mapping, etc.)
+        if let VmValue::Object(obj) = base {
+            let kind_type = match &obj.kind {
+                crate::ObjectKind::Listing => "Listing",
+                crate::ObjectKind::Mapping => "Mapping",
+                crate::ObjectKind::Dynamic => "Dynamic",
+                crate::ObjectKind::Typed(name) => name.as_str(),
+            };
+            if let Some(ext_fn) = self.externals.get_property(kind_type, member) {
+                return ext_fn(std::slice::from_ref(base), self, scope);
+            }
+            // Try base type for generics (e.g., "Listing<Item>" -> "Listing")
+            if let crate::ObjectKind::Typed(name) = &obj.kind {
+                if let Some(base_type) = name.split('<').next() {
+                    if base_type != name.as_str() {
+                        if let Some(ext_fn) = self.externals.get_property(base_type, member) {
+                            return ext_fn(std::slice::from_ref(base), self, scope);
+                        }
+                    }
+                }
+            }
+        }
+
         match base {
             VmValue::Object(obj) => {
                 if let Some(member_obj) = obj.get_property_member(member) {
@@ -1047,13 +1225,12 @@ impl Evaluator {
                             "Cannot get min of empty list".to_string(),
                         ))
                     } else {
-                        // For now, assume numeric comparison
                         let mut min = l[0].clone();
                         for v in l.iter().skip(1) {
-                            if let (Some(a), Some(b)) = (v.as_float(), min.as_float()) {
-                                if a < b {
-                                    min = v.clone();
-                                }
+                            if v.compare_to(&min).unwrap_or(std::cmp::Ordering::Equal)
+                                == std::cmp::Ordering::Less
+                            {
+                                min = v.clone();
                             }
                         }
                         Ok(min)
@@ -1067,14 +1244,25 @@ impl Evaluator {
                     } else {
                         let mut max = l[0].clone();
                         for v in l.iter().skip(1) {
-                            if let (Some(a), Some(b)) = (v.as_float(), max.as_float()) {
-                                if a > b {
-                                    max = v.clone();
-                                }
+                            if v.compare_to(&max).unwrap_or(std::cmp::Ordering::Equal)
+                                == std::cmp::Ordering::Greater
+                            {
+                                max = v.clone();
                             }
                         }
                         Ok(max)
                     }
+                }
+                "flatten" => {
+                    let mut result = Vec::new();
+                    for item in l.iter() {
+                        if let VmValue::List(inner) = item {
+                            result.extend(inner.iter().cloned());
+                        } else {
+                            result.push(item.clone());
+                        }
+                    }
+                    Ok(VmValue::list(result))
                 }
                 _ => Err(EvalError::undefined_prop(member)),
             },
@@ -1148,45 +1336,218 @@ impl Evaluator {
                         value: *i as f64,
                         unit: DataSizeUnit::Gibibytes,
                     }),
+                    "pb" => Ok(VmValue::DataSize {
+                        value: *i as f64,
+                        unit: DataSizeUnit::Petabytes,
+                    }),
+                    "tib" => Ok(VmValue::DataSize {
+                        value: *i as f64,
+                        unit: DataSizeUnit::Tebibytes,
+                    }),
+                    "pib" => Ok(VmValue::DataSize {
+                        value: *i as f64,
+                        unit: DataSizeUnit::Pebibytes,
+                    }),
                     "isPositive" => Ok(VmValue::Boolean(*i > 0)),
                     "isNegative" => Ok(VmValue::Boolean(*i < 0)),
                     "isZero" => Ok(VmValue::Boolean(*i == 0)),
+                    "isNonZero" => Ok(VmValue::Boolean(*i != 0)),
                     "isEven" => Ok(VmValue::Boolean(*i % 2 == 0)),
                     "isOdd" => Ok(VmValue::Boolean(*i % 2 != 0)),
                     "abs" => Ok(VmValue::Int(i.abs())),
                     "sign" => Ok(VmValue::Int(i.signum())),
+                    "inv" => Ok(VmValue::Int(!*i)),
                     _ => Err(EvalError::undefined_prop(member)),
                 }
             }
             VmValue::Float(f) => match member {
+                // Duration units
+                "ns" => Ok(VmValue::Duration {
+                    value: *f,
+                    unit: DurationUnit::Nanoseconds,
+                }),
+                "us" => Ok(VmValue::Duration {
+                    value: *f,
+                    unit: DurationUnit::Microseconds,
+                }),
+                "ms" => Ok(VmValue::Duration {
+                    value: *f,
+                    unit: DurationUnit::Milliseconds,
+                }),
+                "s" => Ok(VmValue::Duration {
+                    value: *f,
+                    unit: DurationUnit::Seconds,
+                }),
+                "min" => Ok(VmValue::Duration {
+                    value: *f,
+                    unit: DurationUnit::Minutes,
+                }),
+                "h" => Ok(VmValue::Duration {
+                    value: *f,
+                    unit: DurationUnit::Hours,
+                }),
+                "d" => Ok(VmValue::Duration {
+                    value: *f,
+                    unit: DurationUnit::Days,
+                }),
+                // DataSize units
+                "b" => Ok(VmValue::DataSize {
+                    value: *f,
+                    unit: DataSizeUnit::Bytes,
+                }),
+                "kb" => Ok(VmValue::DataSize {
+                    value: *f,
+                    unit: DataSizeUnit::Kilobytes,
+                }),
+                "mb" => Ok(VmValue::DataSize {
+                    value: *f,
+                    unit: DataSizeUnit::Megabytes,
+                }),
+                "gb" => Ok(VmValue::DataSize {
+                    value: *f,
+                    unit: DataSizeUnit::Gigabytes,
+                }),
+                "tb" => Ok(VmValue::DataSize {
+                    value: *f,
+                    unit: DataSizeUnit::Terabytes,
+                }),
+                "pb" => Ok(VmValue::DataSize {
+                    value: *f,
+                    unit: DataSizeUnit::Petabytes,
+                }),
+                "kib" => Ok(VmValue::DataSize {
+                    value: *f,
+                    unit: DataSizeUnit::Kibibytes,
+                }),
+                "mib" => Ok(VmValue::DataSize {
+                    value: *f,
+                    unit: DataSizeUnit::Mebibytes,
+                }),
+                "gib" => Ok(VmValue::DataSize {
+                    value: *f,
+                    unit: DataSizeUnit::Gibibytes,
+                }),
+                "tib" => Ok(VmValue::DataSize {
+                    value: *f,
+                    unit: DataSizeUnit::Tebibytes,
+                }),
+                "pib" => Ok(VmValue::DataSize {
+                    value: *f,
+                    unit: DataSizeUnit::Pebibytes,
+                }),
+                // Properties
                 "isPositive" => Ok(VmValue::Boolean(*f > 0.0)),
                 "isNegative" => Ok(VmValue::Boolean(*f < 0.0)),
                 "isZero" => Ok(VmValue::Boolean(*f == 0.0)),
+                "isNonZero" => Ok(VmValue::Boolean(*f != 0.0)),
                 "isFinite" => Ok(VmValue::Boolean(f.is_finite())),
                 "isInfinite" => Ok(VmValue::Boolean(f.is_infinite())),
                 "isNaN" => Ok(VmValue::Boolean(f.is_nan())),
+                "isInteger" => Ok(VmValue::Boolean(f.fract() == 0.0 && f.is_finite())),
                 "abs" => Ok(VmValue::Float(f.abs())),
                 "sign" => Ok(VmValue::Float(f.signum())),
                 "ceil" => Ok(VmValue::Float(f.ceil())),
                 "floor" => Ok(VmValue::Float(f.floor())),
                 "round" => Ok(VmValue::Float(f.round())),
+                "truncate" => Ok(VmValue::Float(f.trunc())),
+                // Math functions
+                "sqrt" => Ok(VmValue::Float(f.sqrt())),
+                "cbrt" => Ok(VmValue::Float(f.cbrt())),
+                "exp" => Ok(VmValue::Float(f.exp())),
+                "log" => Ok(VmValue::Float(f.ln())),
+                "log2" => Ok(VmValue::Float(f.log2())),
+                "log10" => Ok(VmValue::Float(f.log10())),
+                "sin" => Ok(VmValue::Float(f.sin())),
+                "cos" => Ok(VmValue::Float(f.cos())),
+                "tan" => Ok(VmValue::Float(f.tan())),
+                "asin" => Ok(VmValue::Float(f.asin())),
+                "acos" => Ok(VmValue::Float(f.acos())),
+                "atan" => Ok(VmValue::Float(f.atan())),
                 _ => Err(EvalError::undefined_prop(member)),
             },
             VmValue::Duration { value, unit } => match member {
                 "value" => Ok(VmValue::Float(*value)),
                 "unit" => Ok(VmValue::String(Arc::from(unit.suffix()))),
-                "isPositive" => Ok(VmValue::Boolean(*value > 0.0)),
+                "isPositive" => Ok(VmValue::Boolean(*value >= 0.0)),
                 "isNegative" => Ok(VmValue::Boolean(*value < 0.0)),
                 "isZero" => Ok(VmValue::Boolean(*value == 0.0)),
+                "isoString" => {
+                    // Convert to total seconds
+                    let nanos = *value * unit.to_nanos_factor();
+                    if nanos.is_nan() || nanos.is_infinite() {
+                        return Err(EvalError::InvalidOperation(
+                            "Cannot convert non-finite duration to ISO string".to_string(),
+                        ));
+                    }
+                    let total_secs = nanos / 1_000_000_000.0;
+                    let negative = total_secs < 0.0;
+                    let abs_secs = total_secs.abs();
+                    let hours = (abs_secs / 3600.0).floor() as u64;
+                    let remaining = abs_secs - hours as f64 * 3600.0;
+                    let minutes = (remaining / 60.0).floor() as u64;
+                    let secs = remaining - minutes as f64 * 60.0;
+                    let mut result = String::new();
+                    if negative {
+                        result.push('-');
+                    }
+                    result.push_str("PT");
+                    if hours > 0 {
+                        result.push_str(&format!("{}H", hours));
+                    }
+                    if minutes > 0 {
+                        result.push_str(&format!("{}M", minutes));
+                    }
+                    // Always include seconds part, or if no hours/minutes
+                    if secs != 0.0 || (hours == 0 && minutes == 0) {
+                        // Format seconds - remove trailing zeros
+                        let s = format!("{}", secs);
+                        result.push_str(&format!("{}S", s));
+                    }
+                    Ok(VmValue::string(result))
+                }
                 _ => Err(EvalError::undefined_prop(member)),
             },
             VmValue::DataSize { value, unit } => match member {
                 "value" => Ok(VmValue::Float(*value)),
                 "unit" => Ok(VmValue::String(Arc::from(unit.suffix()))),
-                "isPositive" => Ok(VmValue::Boolean(*value > 0.0)),
+                "isPositive" => Ok(VmValue::Boolean(*value >= 0.0)),
                 "isNegative" => Ok(VmValue::Boolean(*value < 0.0)),
                 "isZero" => Ok(VmValue::Boolean(*value == 0.0)),
+                "isBinaryUnit" => Ok(VmValue::Boolean(unit.is_binary())),
+                "isDecimalUnit" => Ok(VmValue::Boolean(unit.is_decimal())),
                 _ => Err(EvalError::undefined_prop(member)),
+            },
+            VmValue::Set(s) => match member {
+                "length" => Ok(VmValue::Int(s.len() as i64)),
+                "isEmpty" => Ok(VmValue::Boolean(s.is_empty())),
+                "isNotEmpty" => Ok(VmValue::Boolean(!s.is_empty())),
+                _ => Err(EvalError::InvalidOperation(format!(
+                    "Cannot access member '{}' on Set",
+                    member
+                ))),
+            },
+            VmValue::IntSeq { start, end, step } => match member {
+                "start" => Ok(VmValue::Int(*start)),
+                "end" => Ok(VmValue::Int(*end)),
+                "step" => Ok(VmValue::Int(*step)),
+                _ => Err(EvalError::InvalidOperation(format!(
+                    "Cannot access member '{}' on IntSeq",
+                    member
+                ))),
+            },
+            VmValue::Regex(r) => match member {
+                "pattern" => Ok(VmValue::String(Arc::from(r.pattern.as_str()))),
+                "groupCount" => {
+                    // Count capturing groups in the regex pattern
+                    let re = regex::Regex::new(&r.pattern).map_err(|e| {
+                        EvalError::InvalidOperation(format!("Invalid regex: {}", e))
+                    })?;
+                    Ok(VmValue::Int(re.captures_len() as i64 - 1))
+                }
+                _ => Err(EvalError::InvalidOperation(format!(
+                    "Cannot access member '{}' on Regex",
+                    member
+                ))),
             },
             _ => Err(EvalError::InvalidOperation(format!(
                 "Cannot access member '{}' on {}",
@@ -1634,6 +1995,8 @@ impl Evaluator {
             UnaryOp::Neg => match value {
                 VmValue::Int(i) => Ok(VmValue::Int(-i)),
                 VmValue::Float(f) => Ok(VmValue::Float(-f)),
+                VmValue::Duration { value: v, unit } => Ok(VmValue::Duration { value: -v, unit }),
+                VmValue::DataSize { value: v, unit } => Ok(VmValue::DataSize { value: -v, unit }),
                 _ => Err(EvalError::type_error("numeric", value.type_name())),
             },
             UnaryOp::Not => match value {

@@ -1,0 +1,21 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 4116
+expression: eval_pkl(source)
+---
+{
+  "base": {
+    "name": "myapp",
+    "db": {
+      "host": "localhost",
+      "port": 5432
+    }
+  },
+  "modified": {
+    "name": "myapp",
+    "db": {
+      "host": "localhost",
+      "port": 5433
+    }
+  }
+}

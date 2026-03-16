@@ -1,0 +1,16 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 1272
+expression: eval_pkl(source)
+---
+{
+  "pos": 42,
+  "neg": -10,
+  "zero": 0,
+  "pos_is_positive": true,
+  "pos_is_negative": false,
+  "pos_is_zero": false,
+  "neg_is_positive": false,
+  "neg_is_negative": true,
+  "zero_is_zero": true
+}

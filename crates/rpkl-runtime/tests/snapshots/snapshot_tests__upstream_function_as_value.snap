@@ -1,0 +1,21 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 4019
+expression: eval_pkl(source)
+---
+{
+  "double": "<function>",
+  "add": "<function>",
+  "r1": 42,
+  "r2": 42,
+  "r3": [
+    2,
+    4,
+    6
+  ],
+  "r4": [
+    1,
+    4,
+    9
+  ]
+}

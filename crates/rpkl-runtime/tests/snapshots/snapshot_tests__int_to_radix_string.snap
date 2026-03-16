@@ -1,0 +1,11 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 1307
+expression: eval_pkl(source)
+---
+{
+  "bin": "11111111",
+  "oct": "377",
+  "hex": "ff",
+  "dec": "255"
+}

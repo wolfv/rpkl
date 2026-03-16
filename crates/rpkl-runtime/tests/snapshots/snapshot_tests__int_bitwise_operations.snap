@@ -1,0 +1,12 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 1331
+expression: eval_pkl(source)
+---
+{
+  "shl": 16,
+  "shr": 4,
+  "bit_and": 15,
+  "bit_or": 255,
+  "bit_xor": 240
+}

@@ -1,0 +1,37 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 3605
+expression: eval_pkl(source)
+---
+{
+  "s": [
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
+  "filtered": [
+    4,
+    5
+  ],
+  "mapped": [
+    10,
+    20,
+    30,
+    40,
+    50
+  ],
+  "flat_mapped": [
+    1,
+    10,
+    2,
+    20,
+    3,
+    30,
+    4,
+    40,
+    5,
+    50
+  ]
+}

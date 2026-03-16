@@ -1,0 +1,16 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 3543
+expression: eval_pkl(source)
+---
+{
+  "m": {
+    "a": 1,
+    "b": 2,
+    "c": 3
+  },
+  "any_gt2": true,
+  "any_gt5": false,
+  "every_gt0": true,
+  "every_gt2": false
+}

@@ -1,0 +1,21 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 3921
+expression: eval_pkl(source)
+---
+{
+  "dog": {
+    "name": "Rex",
+    "sound": "Woof",
+    "speak": "<function>",
+    "breed": "German Shepherd"
+  },
+  "cat": {
+    "name": "Whiskers",
+    "sound": "Meow",
+    "speak": "<function>",
+    "indoor": true
+  },
+  "dog_speaks": "Rex says Woof",
+  "cat_speaks": "Whiskers says Meow"
+}

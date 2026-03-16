@@ -1,0 +1,11 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 2696
+expression: eval_pkl(source)
+---
+{
+  "res": {
+    "lowestPrice": 400,
+    "highestPrice": 600
+  }
+}

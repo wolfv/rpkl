@@ -1,0 +1,9 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 4047
+expression: eval_pkl(source)
+---
+{
+  "validate": "<function>",
+  "r1": 42
+}

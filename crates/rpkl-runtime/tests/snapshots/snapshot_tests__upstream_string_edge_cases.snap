@@ -1,0 +1,12 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 4238
+expression: eval_pkl(source)
+---
+{
+  "empty": "",
+  "empty_length": 0,
+  "empty_is_empty": true,
+  "single_char": "a",
+  "unicode": "Hello 🌍"
+}

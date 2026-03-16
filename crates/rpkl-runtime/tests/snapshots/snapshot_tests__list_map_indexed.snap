@@ -1,0 +1,17 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 1627
+expression: eval_pkl(source)
+---
+{
+  "items": [
+    "a",
+    "b",
+    "c"
+  ],
+  "result": [
+    "0:a",
+    "1:b",
+    "2:c"
+  ]
+}

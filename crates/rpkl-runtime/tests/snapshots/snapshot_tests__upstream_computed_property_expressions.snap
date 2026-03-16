@@ -1,0 +1,15 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 4351
+expression: eval_pkl(source)
+---
+{
+  "names": [
+    "alice",
+    "bob"
+  ],
+  "result": {
+    "ALICE": 5,
+    "BOB": 3
+  }
+}

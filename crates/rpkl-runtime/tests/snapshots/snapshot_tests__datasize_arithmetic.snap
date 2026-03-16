@@ -1,0 +1,9 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 1370
+expression: eval_pkl_result(source)
+---
+{
+  "sum": "1024mb",
+  "comparison": false
+}

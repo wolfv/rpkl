@@ -1,0 +1,27 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 2058
+expression: eval_pkl(source)
+---
+{
+  "items": [
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
+  "len": 5,
+  "is_empty": false,
+  "is_not_empty": true,
+  "first": 1,
+  "last": 5,
+  "rest": [
+    2,
+    3,
+    4,
+    5
+  ],
+  "last_index": 4,
+  "is_distinct": true
+}

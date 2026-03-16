@@ -1,0 +1,19 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 1431
+expression: eval_pkl(source)
+---
+{
+  "s": "hello",
+  "empty": "",
+  "blank": "   ",
+  "s_is_empty": false,
+  "s_is_not_empty": true,
+  "s_is_blank": false,
+  "s_is_not_blank": true,
+  "s_last_index": 4,
+  "empty_is_empty": true,
+  "empty_is_blank": true,
+  "blank_is_empty": false,
+  "blank_is_blank": true
+}

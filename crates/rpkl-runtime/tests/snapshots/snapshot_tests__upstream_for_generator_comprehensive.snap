@@ -1,0 +1,19 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 3834
+expression: eval_pkl(source)
+---
+{
+  "squares": [
+    1,
+    4,
+    9,
+    16
+  ],
+  "filtered": [
+    2,
+    4,
+    6,
+    8
+  ]
+}

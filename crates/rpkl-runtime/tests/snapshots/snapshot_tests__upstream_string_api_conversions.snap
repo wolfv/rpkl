@@ -1,0 +1,11 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 3151
+expression: eval_pkl(source)
+---
+{
+  "to_int": 42,
+  "to_float": 3.14,
+  "to_boolean_true": true,
+  "to_boolean_false": false
+}

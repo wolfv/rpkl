@@ -1,0 +1,10 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 2445
+expression: eval_pkl(source)
+---
+{
+  "d": "2h",
+  "in_minutes": "120min",
+  "in_seconds": "7200s"
+}

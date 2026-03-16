@@ -1,0 +1,18 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 3294
+expression: eval_pkl(source)
+---
+{
+  "partitioned": [
+    [
+      4,
+      5
+    ],
+    [
+      1,
+      2,
+      3
+    ]
+  ]
+}

@@ -1,0 +1,23 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 3522
+expression: eval_pkl(source)
+---
+{
+  "m": {
+    "a": 1,
+    "b": 2
+  },
+  "with_new": {
+    "a": 1,
+    "b": 2,
+    "c": 3
+  },
+  "with_replaced": {
+    "a": 99,
+    "b": 2
+  },
+  "removed": {
+    "b": 2
+  }
+}

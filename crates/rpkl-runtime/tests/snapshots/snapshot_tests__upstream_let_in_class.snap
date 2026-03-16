@@ -1,0 +1,13 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 2744
+expression: eval_pkl(source)
+---
+{
+  "res": {
+    "x": 4,
+    "y": 6,
+    "f": "<function>",
+    "z": 6
+  }
+}

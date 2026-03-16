@@ -1,0 +1,15 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 3894
+expression: eval_pkl(source)
+---
+{
+  "p": {
+    "name": "Pigeon",
+    "age": 42,
+    "greet": "<function>",
+    "isAdult": "<function>"
+  },
+  "greeting": "Hello, I'm Pigeon",
+  "adult": true
+}

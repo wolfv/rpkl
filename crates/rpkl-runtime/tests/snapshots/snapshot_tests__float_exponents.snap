@@ -1,0 +1,10 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 1153
+expression: eval_pkl(source)
+---
+{
+  "e1": 1000.0,
+  "e2": 250.0,
+  "e3": 0.0015
+}

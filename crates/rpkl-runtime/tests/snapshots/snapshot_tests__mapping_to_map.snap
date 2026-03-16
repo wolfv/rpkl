@@ -1,0 +1,19 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 2471
+expression: eval_pkl(source)
+---
+{
+  "m": {
+    "a": 1,
+    "b": 2
+  },
+  "converted": {
+    "a": 1,
+    "b": 2
+  },
+  "keys": [
+    "a",
+    "b"
+  ]
+}

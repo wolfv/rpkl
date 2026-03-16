@@ -1,0 +1,14 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+expression: eval_pkl(source)
+---
+{
+  "r1": 1.0,
+  "r2": 2.2,
+  "r3": 3.0,
+  "r4": "b",
+  "r5": "kb",
+  "r6": "kib",
+  "r7": "mb",
+  "r8": "mib"
+}

@@ -1,0 +1,19 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 3305
+expression: eval_pkl(source)
+---
+{
+  "to_set": [
+    1,
+    2,
+    3
+  ],
+  "to_list": [
+    1,
+    2,
+    3
+  ],
+  "join": "a, b, c",
+  "join_empty": "abc"
+}

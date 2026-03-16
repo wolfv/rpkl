@@ -1,0 +1,17 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 1939
+expression: eval_pkl(source)
+---
+{
+  "names": [
+    "alice",
+    "bob",
+    "carol"
+  ],
+  "nameMap": {
+    "alice": 5,
+    "bob": 3,
+    "carol": 5
+  }
+}

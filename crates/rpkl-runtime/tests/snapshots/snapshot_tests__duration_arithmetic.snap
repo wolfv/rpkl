@@ -1,0 +1,11 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 1346
+expression: eval_pkl_result(source)
+---
+{
+  "sum": "8s",
+  "diff": "6s",
+  "mixed": "1.5min",
+  "comparison": true
+}

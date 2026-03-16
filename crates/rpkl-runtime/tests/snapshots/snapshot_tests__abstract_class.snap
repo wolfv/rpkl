@@ -1,0 +1,11 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 1883
+expression: eval_pkl(source)
+---
+{
+  "c": {
+    "name": "Circle",
+    "radius": 5.0
+  }
+}

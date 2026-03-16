@@ -1,0 +1,12 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 4005
+expression: eval_pkl(source)
+---
+{
+  "factorial": "<function>",
+  "fibonacci": "<function>",
+  "fact5": 120,
+  "fact10": 3628800,
+  "fib10": 55
+}

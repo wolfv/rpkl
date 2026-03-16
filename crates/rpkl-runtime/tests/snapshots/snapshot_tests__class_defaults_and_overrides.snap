@@ -1,0 +1,17 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 2155
+expression: eval_pkl(source)
+---
+{
+  "health": {
+    "method": "GET",
+    "path": "/health",
+    "timeout": "30s"
+  },
+  "slow": {
+    "method": "POST",
+    "path": "/upload",
+    "timeout": "120s"
+  }
+}

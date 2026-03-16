@@ -1,0 +1,27 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 4146
+expression: eval_pkl(source)
+---
+{
+  "cluster": {
+    "name": "production",
+    "servers": [
+      {
+        "host": "web1.example.com",
+        "port": 443,
+        "ssl": true
+      },
+      {
+        "host": "web2.example.com",
+        "port": 443,
+        "ssl": true
+      },
+      {
+        "host": "web3.example.com",
+        "port": 443,
+        "ssl": true
+      }
+    ]
+  }
+}

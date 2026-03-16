@@ -1,0 +1,25 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 1658
+expression: eval_pkl(source)
+---
+{
+  "items": [
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
+  "list": [
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
+  "found": 4,
+  "not_found": null,
+  "count": 2,
+  "find_index": 3
+}

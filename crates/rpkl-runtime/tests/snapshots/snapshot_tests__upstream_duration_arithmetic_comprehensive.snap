@@ -1,0 +1,12 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+assertion_line: 3372
+expression: eval_pkl(source)
+---
+{
+  "add": "1.5s",
+  "sub": "1.5h",
+  "mul": "7.5s",
+  "div": "5s",
+  "negate": "-5s"
+}
