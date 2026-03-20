@@ -1,0 +1,12 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+expression: eval_pkl(source)
+---
+{
+  "debug": true,
+  "config": {
+    "host": "localhost",
+    "logLevel": "DEBUG",
+    "verbose": true
+  }
+}

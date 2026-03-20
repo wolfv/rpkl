@@ -1,0 +1,20 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+expression: eval_pkl(source)
+---
+{
+  "rect": {
+    "width": 3.0,
+    "height": 4.0,
+    "area": 12.0,
+    "perimeter": 14.0,
+    "isSquare": false
+  },
+  "square": {
+    "width": 5.0,
+    "height": 5.0,
+    "area": 25.0,
+    "perimeter": 20.0,
+    "isSquare": true
+  }
+}

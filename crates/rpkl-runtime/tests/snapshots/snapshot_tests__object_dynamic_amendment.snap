@@ -1,0 +1,15 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+expression: eval_pkl(source)
+---
+{
+  "base": {
+    "x": 1,
+    "y": 2
+  },
+  "amended": {
+    "x": 10,
+    "y": 2,
+    "z": 3
+  }
+}

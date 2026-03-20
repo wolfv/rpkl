@@ -1,0 +1,8 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+expression: eval_pkl(source)
+---
+{
+  "r1": "Invalid operation: Unknown duration unit: invalid",
+  "r2": "Invalid operation: Unknown data size unit: invalid"
+}

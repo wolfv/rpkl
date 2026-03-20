@@ -6589,3 +6589,703 @@ fn test_set_to_list_to_set() {
     "#;
     insta::assert_snapshot!(eval_pkl(source));
 }
+
+// =============================================================================
+// Phase 4: Error path testing
+// =============================================================================
+
+#[test]
+fn test_error_division_by_zero() {
+    let source = r#"
+        r1 = module.catch(() -> 1 / 0)
+        r2 = module.catch(() -> 1.0 / 0.0)
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_error_list_empty_operations() {
+    let source = r#"
+        r1 = module.catch(() -> List().first)
+        r2 = module.catch(() -> List().last)
+        r3 = module.catch(() -> List().single)
+        r4 = module.catch(() -> List().min)
+        r5 = module.catch(() -> List().max)
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_error_set_empty_operations() {
+    let source = r#"
+        r1 = module.catch(() -> Set().first)
+        r2 = module.catch(() -> Set().last)
+        r3 = module.catch(() -> Set().single)
+        r4 = module.catch(() -> Set().min)
+        r5 = module.catch(() -> Set().max)
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_error_list_single_multiple_elements() {
+    let source = r#"
+        r1 = module.catch(() -> List(1, 2).single)
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_error_set_single_multiple_elements() {
+    let source = r#"
+        r1 = module.catch(() -> Set(1, 2).single)
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_error_list_index_out_of_bounds() {
+    let source = r#"
+        l = List(1, 2, 3)
+        r1 = module.catch(() -> l[10])
+        r2 = module.catch(() -> l[-1])
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_error_string_index_out_of_bounds() {
+    let source = r#"
+        r1 = module.catch(() -> "hello"[10])
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_error_map_key_not_found() {
+    let source = r#"
+        m = Map("a", 1)
+        r1 = module.catch(() -> m["z"])
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_error_type_mismatch_arithmetic() {
+    let source = r#"
+        r1 = module.catch(() -> "hello" + 42)
+        r2 = module.catch(() -> true + 1)
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_error_type_mismatch_comparison() {
+    let source = r#"
+        r1 = module.catch(() -> "hello" < 42)
+        r2 = module.catch(() -> true > false)
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_error_null_member_access() {
+    let source = r#"
+        r1 = module.catch(() -> null.length)
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_error_reduce_empty() {
+    let source = r#"
+        r1 = module.catch(() -> List().reduce((a, b) -> a + b))
+        r2 = module.catch(() -> Set().reduce((a, b) -> a + b))
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_error_throw_expression() {
+    let source = r#"
+        r1 = module.catch(() -> throw("custom error message"))
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_error_invalid_to_unit() {
+    let source = r#"
+        r1 = module.catch(() -> 1.s.toUnit("invalid"))
+        r2 = module.catch(() -> 1.kb.toUnit("invalid"))
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+// =============================================================================
+// Phase 4: Listing higher-order methods
+// =============================================================================
+
+#[test]
+fn test_listing_map() {
+    let source = r#"
+        l = new Listing { 1; 2; 3 }
+        r1 = l.map((x) -> x * 2)
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_listing_filter() {
+    let source = r#"
+        l = new Listing { 1; 2; 3; 4; 5 }
+        r1 = l.filter((x) -> x > 2)
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_listing_fold() {
+    let source = r#"
+        l = new Listing { 1; 2; 3 }
+        r1 = l.fold(0, (acc, x) -> acc + x)
+        r2 = l.fold("", (acc, x) -> acc + "\(x)")
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+// =============================================================================
+// Phase 4: Mapping higher-order methods
+// =============================================================================
+
+#[test]
+fn test_mapping_filter() {
+    let source = r#"
+        m = new Mapping {
+            ["a"] = 1
+            ["b"] = 2
+            ["c"] = 3
+        }
+        r1 = m.filter((k, v) -> v > 1)
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_mapping_map() {
+    let source = r#"
+        m = new Mapping {
+            ["a"] = 1
+            ["b"] = 2
+        }
+        r1 = m.map((k, v) -> Pair(k, v * 10))
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_mapping_fold() {
+    let source = r#"
+        m = new Mapping {
+            ["a"] = 1
+            ["b"] = 2
+            ["c"] = 3
+        }
+        r1 = m.fold(0, (acc, k, v) -> acc + v)
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+// =============================================================================
+// Phase 4: Object/Class edge cases
+// =============================================================================
+
+#[test]
+fn test_object_amend_nested() {
+    let source = r#"
+        class Server {
+            host: String
+            port: Int
+        }
+        class Config {
+            server: Server
+            debug: Boolean
+        }
+        base = new Config {
+            server = new Server { host = "localhost"; port = 8080 }
+            debug = false
+        }
+        production = (base) {
+            server { port = 443; host = "prod.example.com" }
+            debug = false
+        }
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_object_amend_chain() {
+    let source = r#"
+        class Config {
+            host: String = "localhost"
+            port: Int = 8080
+            workers: Int = 1
+        }
+        base = new Config {}
+        step1 = (base) { port = 3000 }
+        step2 = (step1) { workers = 4 }
+        step3 = (step2) { host = "0.0.0.0" }
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_class_method_override() {
+    let source = r#"
+        class Animal {
+            name: String
+            function sound(): String = "..."
+            description: String = "\(name) says \(sound())"
+        }
+        class Dog extends Animal {
+            function sound(): String = "woof"
+        }
+        class Cat extends Animal {
+            function sound(): String = "meow"
+        }
+        dog = new Dog { name = "Rex" }
+        cat = new Cat { name = "Whiskers" }
+        dog_desc = dog.description
+        cat_desc = cat.description
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_class_inheritance_chain() {
+    let source = r#"
+        class Base {
+            x: Int = 1
+        }
+        class Middle extends Base {
+            y: Int = 2
+        }
+        class Derived extends Middle {
+            z: Int = 3
+        }
+        obj = new Derived {}
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_class_computed_properties() {
+    let source = r#"
+        class Rectangle {
+            width: Float
+            height: Float
+            area: Float = width * height
+            perimeter: Float = 2 * (width + height)
+            isSquare: Boolean = width == height
+        }
+        rect = new Rectangle { width = 3.0; height = 4.0 }
+        square = new Rectangle { width = 5.0; height = 5.0 }
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_class_with_collections() {
+    let source = r#"
+        class Team {
+            name: String
+            members: List<String>
+            size: Int = members.length
+        }
+        team = new Team {
+            name = "Engineering"
+            members = List("Alice", "Bob", "Charlie")
+        }
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_object_dynamic_amendment() {
+    let source = r#"
+        base = new {
+            x = 1
+            y = 2
+        }
+        amended = (base) {
+            z = 3
+            x = 10
+        }
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_listing_amendment() {
+    let source = r#"
+        base = new Listing { 1; 2; 3 }
+        amended = (base) { 4; 5 }
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+// =============================================================================
+// Phase 4: String interpolation edge cases
+// =============================================================================
+
+#[test]
+fn test_string_interpolation_complex_expressions() {
+    let source = r#"
+        x = 10
+        r1 = "result: \(x * 2 + 1)"
+        r2 = "bool: \(x > 5)"
+        r3 = "list: \(List(1, 2, 3))"
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_string_interpolation_nested() {
+    let source = r#"
+        name = "world"
+        r1 = "hello \("dear \(name)")"
+        r2 = "\("\("\("deep")")")"
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_string_interpolation_method_calls() {
+    let source = r#"
+        s = "hello"
+        r1 = "upper: \(s.toUpperCase())"
+        r2 = "len: \(s.length)"
+        r3 = "rev: \(s.reverse())"
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_multiline_string_basic() {
+    let source = r#"
+        r1 = """
+            hello
+            world
+            """
+        r2 = """
+            line 1
+              indented
+            line 3
+            """
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_multiline_string_interpolation_crosstype() {
+    let source = r#"
+        name = "PKL"
+        version = 1
+        r1 = """
+            Hello \(name)!
+            Version: \(version)
+            """
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_multiline_string_custom_delimiter() {
+    let source = r##"
+        r1 = #"""
+            This has a "quote" inside
+            And \(no interpolation)
+            """#
+    "##;
+    insta::assert_snapshot!(eval_pkl_result(source));
+}
+
+// =============================================================================
+// Phase 4: Cross-type interactions
+// =============================================================================
+
+#[test]
+fn test_duration_arithmetic_crosstype() {
+    let source = r#"
+        r1 = 1.h + 30.min
+        r2 = 2.d - 12.h
+        r3 = 3.s * 2
+        r4 = 10.min / 2
+        r5 = 1.h + 1800.s
+        r6 = 1.d - 1.h
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_duration_comparison() {
+    let source = r#"
+        r1 = 1.h > 30.min
+        r2 = 1.h < 30.min
+        r3 = 60.min == 1.h
+        r4 = 3600.s == 1.h
+        r5 = 1.h >= 60.min
+        r6 = 1.h <= 60.min
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_duration_negation() {
+    let source = r#"
+        r1 = -(1.h)
+        r2 = -(30.min)
+        r3 = (-(1.h)).isNegative
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_datasize_arithmetic_crosstype() {
+    let source = r#"
+        r1 = 1.gb + 512.mb
+        r2 = 2.tb - 500.gb
+        r3 = 100.mb * 3
+        r4 = 1.gb / 4
+        r5 = 1.gib + 512.mib
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_datasize_comparison() {
+    let source = r#"
+        r1 = 1.gb > 512.mb
+        r2 = 1.gb < 512.mb
+        r3 = 1000.mb == 1.gb
+        r4 = 1024.mib == 1.gib
+        r5 = 1.gb >= 1000.mb
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_mixed_int_float_arithmetic() {
+    let source = r#"
+        r1 = 1 + 2.5
+        r2 = 10 - 3.5
+        r3 = 4 * 2.5
+        r4 = 7 / 2
+        r5 = 7 / 2.0
+        r6 = 2.5 + 1
+        r7 = 10.0 - 3
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_mixed_int_float_comparison() {
+    let source = r#"
+        r1 = 1 == 1.0
+        r2 = 1 < 1.5
+        r3 = 2.0 > 1
+        r4 = 3 >= 3.0
+        r5 = 3 <= 3.0
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_duration_in_collections() {
+    let source = r#"
+        durations = List(5.min, 1.h, 30.s, 2.d)
+        sorted = durations.sort()
+        r_min = durations.min
+        r_max = durations.max
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_datasize_in_collections() {
+    let source = r#"
+        sizes = List(100.mb, 1.gb, 50.kb, 2.tb)
+        sorted = sizes.sort()
+        r_min = sizes.min
+        r_max = sizes.max
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_mixed_numeric_collections() {
+    let source = r#"
+        l = List(1, 2.5, 3, 4.5, 5)
+        r1 = l.min
+        r2 = l.max
+        r3 = l.fold(0, (acc, x) -> acc + x)
+        r4 = l.filter((x) -> x > 2)
+        r5 = l.sort()
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+// =============================================================================
+// Phase 4: Additional edge cases
+// =============================================================================
+
+#[test]
+fn test_null_coalescing_chains() {
+    let source = r#"
+        r1 = null ?? "default"
+        r2 = "value" ?? "default"
+        r3 = null ?? null ?? "fallback"
+        r4 = null ?? null ?? null
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_optional_chaining() {
+    let source = r#"
+        x = null
+        r1 = x?.length
+        s = "hello"
+        r2 = s?.length
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_type_checks_is() {
+    let source = r#"
+        r1 = 42 is Int
+        r2 = 42 is Float
+        r3 = 42 is Number
+        r4 = "hello" is String
+        r5 = "hello" is Int
+        r6 = true is Boolean
+        r7 = null is Null
+        r8 = List(1, 2) is List
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_let_bindings_complex() {
+    let source = r#"
+        r1 = let (x = 10) let (y = x * 2) x + y
+        r2 = let (name = "world") "hello \(name)"
+        r3 = let (l = List(1, 2, 3)) l.fold(0, (acc, x) -> acc + x)
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_for_generator_complex() {
+    let source = r#"
+        result = new Listing {
+            for (x in List(1, 2, 3)) {
+                for (y in List(10, 20)) {
+                    x * y
+                }
+            }
+        }
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_when_generator_with_for() {
+    let source = r#"
+        debug = true
+        config = new {
+            host = "localhost"
+            when (debug) {
+                logLevel = "DEBUG"
+                verbose = true
+            }
+        }
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_pipe_operator_crosstype() {
+    let source = r#"
+        r1 = 42 |> (x) -> x * 2
+        r2 = "hello" |> (s) -> s.toUpperCase()
+        r3 = List(3, 1, 2) |> (l) -> l.sort()
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_non_null_assertion() {
+    let source = r#"
+        x: String? = "hello"
+        r1 = x!!
+        r2 = x!!.length
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_non_null_assertion_on_null_error() {
+    let source = r#"
+        r1 = module.catch(() -> null!!)
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_string_equality_and_comparison() {
+    let source = r#"
+        r1 = "abc" == "abc"
+        r2 = "abc" != "def"
+        r3 = "abc" < "def"
+        r4 = "def" > "abc"
+        r5 = "abc" <= "abc"
+        r6 = "abc" >= "abc"
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_boolean_short_circuit() {
+    let source = r#"
+        r1 = false && throw("should not reach")
+        r2 = true || throw("should not reach")
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_numeric_edge_cases() {
+    let source = r#"
+        r1 = 0 * 1000000
+        r2 = (-1) * (-1)
+        r3 = 1000000 * 1000000
+        r4 = 10 ~/ 3
+        r5 = 10 % 3
+        r6 = (-10) % 3
+        r7 = 10 ** 3
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}
+
+#[test]
+fn test_string_unicode() {
+    let source = r#"
+        r1 = "café".length
+        r2 = "Hello 🌍".length
+        r3 = "日本語".length
+        r4 = "\u{1F600}"
+    "#;
+    insta::assert_snapshot!(eval_pkl(source));
+}

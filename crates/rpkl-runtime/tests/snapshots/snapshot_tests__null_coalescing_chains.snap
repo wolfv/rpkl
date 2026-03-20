@@ -1,0 +1,10 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+expression: eval_pkl(source)
+---
+{
+  "r1": "default",
+  "r2": "value",
+  "r3": "fallback",
+  "r4": null
+}

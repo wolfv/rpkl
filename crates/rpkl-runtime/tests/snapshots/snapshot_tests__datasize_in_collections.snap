@@ -1,0 +1,20 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+expression: eval_pkl(source)
+---
+{
+  "sizes": [
+    "100mb",
+    "1gb",
+    "50kb",
+    "2tb"
+  ],
+  "sorted": [
+    "100mb",
+    "1gb",
+    "50kb",
+    "2tb"
+  ],
+  "r_min": "50kb",
+  "r_max": "2tb"
+}

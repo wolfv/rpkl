@@ -1,0 +1,20 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+expression: eval_pkl(source)
+---
+{
+  "durations": [
+    "5min",
+    "1h",
+    "30s",
+    "2d"
+  ],
+  "sorted": [
+    "5min",
+    "1h",
+    "30s",
+    "2d"
+  ],
+  "r_min": "30s",
+  "r_max": "2d"
+}
