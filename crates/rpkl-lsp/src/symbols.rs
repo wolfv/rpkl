@@ -1694,7 +1694,7 @@ typealias Port = Int"#;
     // =========================================================================
 
     fn find_offset(text: &str, needle: &str) -> usize {
-        text.find(needle).expect(&format!("'{}' not found in text", needle))
+        text.find(needle).unwrap_or_else(|| panic!("'{}' not found in text", needle))
     }
 
     #[test]
