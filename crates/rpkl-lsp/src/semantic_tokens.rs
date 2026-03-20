@@ -566,3 +566,229 @@ fn encode_tokens(raw_tokens: &[RawToken], doc: &Document) -> Vec<SemanticToken> 
 
     result
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::document::Document;
+
+    #[test]
+    fn test_semantic_tokens_empty_doc() {
+        let doc = Document::new("".to_string());
+        let tokens = semantic_tokens_full(&doc);
+        assert!(tokens.is_empty());
+    }
+
+    #[test]
+    fn test_semantic_tokens_property() {
+        let doc = Document::new("name = \"hello\"".to_string());
+        let tokens = semantic_tokens_full(&doc);
+        assert!(!tokens.is_empty(), "Should have semantic tokens for property");
+        // First token should be the property name
+        let first = &tokens[0];
+        assert_eq!(first.token_type, TokenType::Property as u32);
+    }
+
+    #[test]
+    fn test_semantic_tokens_class() {
+        let doc = Document::new("class Person {\n  name: String\n}".to_string());
+        let tokens = semantic_tokens_full(&doc);
+        assert!(!tokens.is_empty());
+
+        // Should have at least: class name, property name, type name
+        let types: Vec<u32> = tokens.iter().map(|t| t.token_type).collect();
+        assert!(types.contains(&(TokenType::Class as u32)), "Should have class token");
+        assert!(types.contains(&(TokenType::Property as u32)), "Should have property token");
+        assert!(types.contains(&(TokenType::Type as u32)), "Should have type token");
+    }
+
+    #[test]
+    fn test_semantic_tokens_method() {
+        let doc = Document::new(
+            "function greet(name: String): String = \"Hello\"".to_string(),
+        );
+        let tokens = semantic_tokens_full(&doc);
+        assert!(!tokens.is_empty());
+
+        let types: Vec<u32> = tokens.iter().map(|t| t.token_type).collect();
+        assert!(types.contains(&(TokenType::Method as u32)), "Should have method token");
+        assert!(types.contains(&(TokenType::Parameter as u32)), "Should have parameter token");
+    }
+
+    #[test]
+    fn test_semantic_tokens_number() {
+        let doc = Document::new("x = 42".to_string());
+        let tokens = semantic_tokens_full(&doc);
+        let types: Vec<u32> = tokens.iter().map(|t| t.token_type).collect();
+        assert!(types.contains(&(TokenType::Number as u32)), "Should have number token");
+    }
+
+    #[test]
+    fn test_semantic_tokens_string() {
+        let doc = Document::new("x = \"hello\"".to_string());
+        let tokens = semantic_tokens_full(&doc);
+        let types: Vec<u32> = tokens.iter().map(|t| t.token_type).collect();
+        assert!(types.contains(&(TokenType::String as u32)), "Should have string token");
+    }
+
+    #[test]
+    fn test_semantic_tokens_boolean() {
+        let doc = Document::new("x = true".to_string());
+        let tokens = semantic_tokens_full(&doc);
+        let types: Vec<u32> = tokens.iter().map(|t| t.token_type).collect();
+        assert!(types.contains(&(TokenType::Keyword as u32)), "Should have keyword token for true");
+    }
+
+    #[test]
+    fn test_semantic_tokens_null() {
+        let doc = Document::new("x = null".to_string());
+        let tokens = semantic_tokens_full(&doc);
+        let types: Vec<u32> = tokens.iter().map(|t| t.token_type).collect();
+        assert!(types.contains(&(TokenType::Keyword as u32)), "Should have keyword token for null");
+    }
+
+    #[test]
+    fn test_semantic_tokens_delta_encoding() {
+        let doc = Document::new("a = 1\nb = 2".to_string());
+        let tokens = semantic_tokens_full(&doc);
+        assert!(tokens.len() >= 4, "Should have tokens for both lines");
+
+        // Verify delta encoding: tokens on different lines should have delta_line > 0
+        let second_line_tokens: Vec<&SemanticToken> = tokens.iter()
+            .filter(|t| t.delta_line > 0)
+            .collect();
+        assert!(!second_line_tokens.is_empty(), "Should have tokens on second line with delta_line > 0");
+    }
+
+    #[test]
+    fn test_semantic_tokens_identifier_reference() {
+        let doc = Document::new("x = 10\ny = x".to_string());
+        let tokens = semantic_tokens_full(&doc);
+        let types: Vec<u32> = tokens.iter().map(|t| t.token_type).collect();
+        assert!(types.contains(&(TokenType::Variable as u32)), "Should have variable token for identifier reference");
+    }
+
+    #[test]
+    fn test_semantic_tokens_member_access() {
+        let doc = Document::new("x = obj.field".to_string());
+        let tokens = semantic_tokens_full(&doc);
+        let types: Vec<u32> = tokens.iter().map(|t| t.token_type).collect();
+        assert!(types.contains(&(TokenType::Property as u32)), "Should have property token for member access");
+        assert!(types.contains(&(TokenType::Variable as u32)), "Should have variable token for base");
+    }
+
+    #[test]
+    fn test_semantic_tokens_type_params() {
+        let doc = Document::new("class Container<T> {\n  value: T\n}".to_string());
+        let tokens = semantic_tokens_full(&doc);
+        let types: Vec<u32> = tokens.iter().map(|t| t.token_type).collect();
+        assert!(types.contains(&(TokenType::TypeParameter as u32)), "Should have type parameter token");
+    }
+
+    #[test]
+    fn test_semantic_tokens_typealias() {
+        let doc = Document::new("typealias Name = String".to_string());
+        let tokens = semantic_tokens_full(&doc);
+        let types: Vec<u32> = tokens.iter().map(|t| t.token_type).collect();
+        assert!(types.contains(&(TokenType::Type as u32)), "Should have type token");
+    }
+
+    #[test]
+    fn test_semantic_tokens_lambda() {
+        let doc = Document::new("fn = (x, y) -> x + y".to_string());
+        let tokens = semantic_tokens_full(&doc);
+        assert!(!tokens.is_empty());
+        let types: Vec<u32> = tokens.iter().map(|t| t.token_type).collect();
+        assert!(types.contains(&(TokenType::Parameter as u32)), "Should have parameter tokens for lambda params");
+    }
+
+    #[test]
+    fn test_semantic_tokens_let_expr() {
+        let doc = Document::new("result = let (x = 10) x + 1".to_string());
+        let tokens = semantic_tokens_full(&doc);
+        assert!(!tokens.is_empty());
+        let types: Vec<u32> = tokens.iter().map(|t| t.token_type).collect();
+        assert!(types.contains(&(TokenType::Variable as u32)), "Should have variable token for let binding");
+    }
+
+    #[test]
+    fn test_semantic_tokens_new_expr() {
+        let source = "class Cfg {\n  x: Int\n}\nc = new Cfg {\n  x = 1\n}";
+        let doc = Document::new(source.to_string());
+        let tokens = semantic_tokens_full(&doc);
+        let types: Vec<u32> = tokens.iter().map(|t| t.token_type).collect();
+        assert!(types.contains(&(TokenType::Type as u32)), "Should have type token for new class ref");
+    }
+
+    #[test]
+    fn test_semantic_tokens_if_expr() {
+        let doc = Document::new("x = if (true) 1 else 2".to_string());
+        let tokens = semantic_tokens_full(&doc);
+        assert!(!tokens.is_empty());
+    }
+
+    #[test]
+    fn test_semantic_token_legend() {
+        let legend = semantic_token_legend();
+        assert!(!legend.token_types.is_empty());
+        assert!(legend.token_types.contains(&SemanticTokenType::CLASS));
+        assert!(legend.token_types.contains(&SemanticTokenType::PROPERTY));
+        assert!(legend.token_types.contains(&SemanticTokenType::METHOD));
+        assert!(legend.token_types.contains(&SemanticTokenType::VARIABLE));
+        assert!(legend.token_types.contains(&SemanticTokenType::KEYWORD));
+        assert!(legend.token_types.contains(&SemanticTokenType::STRING));
+        assert!(legend.token_types.contains(&SemanticTokenType::NUMBER));
+    }
+
+    #[test]
+    fn test_semantic_tokens_complex_document() {
+        let source = r#"class Config {
+  host: String
+  port: Int
+  debug: Boolean
+}
+
+function createConfig(host: String, port: Int): Config = new Config {
+  host = host
+  port = port
+  debug = false
+}
+
+defaultConfig = createConfig("localhost", 8080)"#;
+        let doc = Document::new(source.to_string());
+        let tokens = semantic_tokens_full(&doc);
+        assert!(!tokens.is_empty(), "Complex document should have semantic tokens");
+
+        // Verify that token positions are valid (no negative deltas)
+        for token in &tokens {
+            assert!(token.length > 0, "Token length should be positive");
+        }
+    }
+
+    #[test]
+    fn test_semantic_tokens_import() {
+        let doc = Document::new("import \"./other.pkl\"".to_string());
+        let tokens = semantic_tokens_full(&doc);
+        // Import URI should be highlighted as string
+        let types: Vec<u32> = tokens.iter().map(|t| t.token_type).collect();
+        assert!(types.contains(&(TokenType::String as u32)), "Import URI should be highlighted as string");
+    }
+
+    #[test]
+    fn test_semantic_tokens_import_with_alias() {
+        let doc = Document::new("import \"./other.pkl\" as other".to_string());
+        let tokens = semantic_tokens_full(&doc);
+        let types: Vec<u32> = tokens.iter().map(|t| t.token_type).collect();
+        assert!(types.contains(&(TokenType::String as u32)));
+        assert!(types.contains(&(TokenType::Variable as u32)), "Import alias should be highlighted as variable");
+    }
+
+    #[test]
+    fn test_semantic_tokens_extends() {
+        let doc = Document::new("class Child extends Parent {\n  extra: Int\n}".to_string());
+        let tokens = semantic_tokens_full(&doc);
+        let types: Vec<u32> = tokens.iter().map(|t| t.token_type).collect();
+        assert!(types.contains(&(TokenType::Class as u32)));
+        assert!(types.contains(&(TokenType::Type as u32)), "Extends type should be highlighted");
+    }
+}

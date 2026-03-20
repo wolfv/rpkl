@@ -232,4 +232,253 @@ mod tests {
         let offset = doc.position_to_offset(pos).unwrap();
         assert_eq!(doc.offset_to_position(offset), Some(pos));
     }
+
+    #[test]
+    fn test_offset_position_empty_document() {
+        let doc = Document::new("".to_string());
+        assert_eq!(
+            doc.offset_to_position(0),
+            Some(Position {
+                line: 0,
+                character: 0
+            })
+        );
+        assert_eq!(doc.offset_to_position(1), None);
+    }
+
+    #[test]
+    fn test_offset_position_single_line_no_newline() {
+        let doc = Document::new("hello".to_string());
+        assert_eq!(
+            doc.offset_to_position(0),
+            Some(Position {
+                line: 0,
+                character: 0
+            })
+        );
+        assert_eq!(
+            doc.offset_to_position(4),
+            Some(Position {
+                line: 0,
+                character: 4
+            })
+        );
+        assert_eq!(
+            doc.offset_to_position(5),
+            Some(Position {
+                line: 0,
+                character: 5
+            })
+        );
+    }
+
+    #[test]
+    fn test_offset_position_unicode() {
+        // "café" has 5 chars but 6 bytes (é is 2 bytes in UTF-8)
+        let doc = Document::new("café\nworld".to_string());
+        // character 4 is 'é' at byte offset 3..5
+        // 'é' is at character position 3, byte offset 3
+        assert_eq!(
+            doc.offset_to_position(3),
+            Some(Position {
+                line: 0,
+                character: 3
+            })
+        );
+        // After "café" (5 bytes for 4 chars + newline at byte 5)
+        assert_eq!(
+            doc.offset_to_position(6),
+            Some(Position {
+                line: 1,
+                character: 0
+            })
+        );
+    }
+
+    #[test]
+    fn test_position_to_offset_out_of_range() {
+        let doc = Document::new("hello\nworld".to_string());
+        // Line 5 doesn't exist
+        assert_eq!(
+            doc.position_to_offset(Position {
+                line: 5,
+                character: 0
+            }),
+            None
+        );
+    }
+
+    #[test]
+    fn test_position_to_offset_round_trip() {
+        let doc = Document::new("name: String\nage: Int\nactive: Boolean".to_string());
+        for line in 0..3u32 {
+            for ch in 0..5u32 {
+                let pos = Position {
+                    line,
+                    character: ch,
+                };
+                if let Some(offset) = doc.position_to_offset(pos) {
+                    let back = doc.offset_to_position(offset);
+                    assert_eq!(back, Some(pos), "Round-trip failed for {:?}", pos);
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn test_multiple_empty_lines() {
+        let doc = Document::new("a\n\n\nb".to_string());
+        assert_eq!(
+            doc.offset_to_position(2),
+            Some(Position {
+                line: 1,
+                character: 0
+            })
+        );
+        assert_eq!(
+            doc.offset_to_position(3),
+            Some(Position {
+                line: 2,
+                character: 0
+            })
+        );
+        assert_eq!(
+            doc.offset_to_position(4),
+            Some(Position {
+                line: 3,
+                character: 0
+            })
+        );
+    }
+
+    #[test]
+    fn test_span_to_range() {
+        let doc = Document::new("name = \"hello\"".to_string());
+        let span = Span { start: 0, end: 4 };
+        let range = doc.span_to_range(span);
+        assert_eq!(range.start, Position { line: 0, character: 0 });
+        assert_eq!(range.end, Position { line: 0, character: 4 });
+    }
+
+    #[test]
+    fn test_parse_valid_pkl() {
+        let doc = Document::new("name = \"hello\"\nage = 42".to_string());
+        assert!(doc.ast.is_some());
+        assert!(doc.parse_error.is_none());
+        assert!(doc.diagnostics().is_empty());
+    }
+
+    #[test]
+    fn test_parse_invalid_pkl() {
+        let doc = Document::new("name = {{{invalid".to_string());
+        // Should have a parse error or at least not panic
+        // The parser may or may not succeed depending on the grammar
+        if doc.ast.is_none() {
+            assert!(doc.parse_error.is_some());
+            assert!(!doc.diagnostics().is_empty());
+        }
+    }
+
+    #[test]
+    fn test_diagnostics_on_valid_document() {
+        let doc = Document::new("x = 1\ny = 2".to_string());
+        assert!(doc.diagnostics().is_empty());
+    }
+
+    #[test]
+    fn test_parse_error_location_arrow_format() {
+        let error = " --> 3:10\n  |\n3 | bad stuff\n  |          ^---\n  |\n  = expected identifier";
+        let line_offsets = vec![0, 10, 20];
+        let text = "line one\nline two\nline three";
+        let (range, message) = parse_error_location(error, &line_offsets, text);
+        assert_eq!(range.start.line, 2); // line 3 -> 0-indexed = 2
+        assert_eq!(range.start.character, 9); // column 10 -> 0-indexed = 9
+        assert_eq!(message, "expected identifier");
+    }
+
+    #[test]
+    fn test_parse_error_location_fallback() {
+        let error = "some random error message";
+        let line_offsets = vec![0];
+        let text = "hello";
+        let (range, message) = parse_error_location(error, &line_offsets, text);
+        assert_eq!(range.start.line, 0);
+        assert_eq!(range.start.character, 0);
+        assert_eq!(message, error);
+    }
+
+    #[test]
+    fn test_compute_line_offsets() {
+        let offsets = compute_line_offsets("abc\ndef\nghi");
+        assert_eq!(offsets, vec![0, 4, 8]);
+    }
+
+    #[test]
+    fn test_compute_line_offsets_trailing_newline() {
+        let offsets = compute_line_offsets("abc\n");
+        assert_eq!(offsets, vec![0, 4]);
+    }
+
+    #[test]
+    fn test_compute_line_offsets_empty() {
+        let offsets = compute_line_offsets("");
+        assert_eq!(offsets, vec![0]);
+    }
+
+    #[test]
+    fn test_parse_class_definition() {
+        let doc = Document::new(
+            "class Person {\n  name: String\n  age: Int\n}".to_string(),
+        );
+        assert!(doc.ast.is_some());
+        assert!(doc.parse_error.is_none());
+    }
+
+    #[test]
+    fn test_parse_import() {
+        let doc = Document::new(
+            "import \"./other.pkl\"\n\nname = other.value".to_string(),
+        );
+        // Parser may or may not handle this depending on grammar specifics
+        // At minimum it shouldn't panic
+        let _ = doc.diagnostics();
+    }
+
+    #[test]
+    fn test_parse_method() {
+        let doc = Document::new(
+            "function greet(name: String): String = \"Hello, \\(name)\"".to_string(),
+        );
+        assert!(doc.ast.is_some(), "Method should parse successfully");
+    }
+
+    #[test]
+    fn test_parse_typealias() {
+        let doc = Document::new("typealias Name = String".to_string());
+        assert!(doc.ast.is_some());
+    }
+
+    #[test]
+    fn test_parse_complex_document() {
+        let source = r#"
+class Config {
+  host: String
+  port: Int
+  debug: Boolean
+}
+
+config = new Config {
+  host = "localhost"
+  port = 8080
+  debug = true
+}
+
+items = new Listing {
+  "item1"
+  "item2"
+}
+"#;
+        let doc = Document::new(source.to_string());
+        assert!(doc.ast.is_some(), "Complex document should parse: {:?}", doc.parse_error);
+    }
 }

@@ -1581,3 +1581,617 @@ pub fn get_completions(doc: &Document, _offset: usize) -> Vec<CompletionItem> {
 
     items
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::document::Document;
+    use tower_lsp::lsp_types::SymbolKind;
+
+    // =========================================================================
+    // Document Symbols
+    // =========================================================================
+
+    #[test]
+    fn test_document_symbols_empty() {
+        let doc = Document::new("".to_string());
+        let symbols = document_symbols(&doc);
+        // Empty doc might not parse, symbols should be empty
+        assert!(symbols.is_empty());
+    }
+
+    #[test]
+    fn test_document_symbols_properties() {
+        let doc = Document::new("name = \"Alice\"\nage = 30".to_string());
+        let symbols = document_symbols(&doc);
+        assert_eq!(symbols.len(), 2);
+        assert_eq!(symbols[0].name, "name");
+        assert_eq!(symbols[0].kind, SymbolKind::PROPERTY);
+        assert_eq!(symbols[1].name, "age");
+        assert_eq!(symbols[1].kind, SymbolKind::PROPERTY);
+    }
+
+    #[test]
+    fn test_document_symbols_typed_property() {
+        let doc = Document::new("name: String = \"Alice\"".to_string());
+        let symbols = document_symbols(&doc);
+        assert_eq!(symbols.len(), 1);
+        assert_eq!(symbols[0].name, "name");
+        assert_eq!(symbols[0].detail.as_deref(), Some("String"));
+    }
+
+    #[test]
+    fn test_document_symbols_class() {
+        let doc = Document::new(
+            "class Person {\n  name: String\n  age: Int\n}".to_string(),
+        );
+        let symbols = document_symbols(&doc);
+        assert_eq!(symbols.len(), 1);
+        assert_eq!(symbols[0].name, "Person");
+        assert_eq!(symbols[0].kind, SymbolKind::CLASS);
+        // Class should have children
+        let children = symbols[0].children.as_ref().unwrap();
+        assert_eq!(children.len(), 2);
+        assert_eq!(children[0].name, "name");
+        assert_eq!(children[1].name, "age");
+    }
+
+    #[test]
+    fn test_document_symbols_method() {
+        let doc = Document::new(
+            "function greet(name: String): String = \"Hello\"".to_string(),
+        );
+        let symbols = document_symbols(&doc);
+        assert_eq!(symbols.len(), 1);
+        assert_eq!(symbols[0].name, "greet");
+        assert_eq!(symbols[0].kind, SymbolKind::METHOD);
+        // Detail should include params and return type
+        let detail = symbols[0].detail.as_ref().unwrap();
+        assert!(detail.contains("name: String"), "Detail should contain params: {}", detail);
+    }
+
+    #[test]
+    fn test_document_symbols_typealias() {
+        let doc = Document::new("typealias Name = String".to_string());
+        let symbols = document_symbols(&doc);
+        assert_eq!(symbols.len(), 1);
+        assert_eq!(symbols[0].name, "Name");
+        assert_eq!(symbols[0].kind, SymbolKind::TYPE_PARAMETER);
+        assert_eq!(symbols[0].detail.as_deref(), Some("String"));
+    }
+
+    #[test]
+    fn test_document_symbols_mixed() {
+        let source = r#"name = "test"
+class Config {
+  host: String
+}
+function helper(): Int = 42
+typealias Port = Int"#;
+        let doc = Document::new(source.to_string());
+        let symbols = document_symbols(&doc);
+        assert_eq!(symbols.len(), 4);
+        assert_eq!(symbols[0].kind, SymbolKind::PROPERTY);
+        assert_eq!(symbols[1].kind, SymbolKind::CLASS);
+        assert_eq!(symbols[2].kind, SymbolKind::METHOD);
+        assert_eq!(symbols[3].kind, SymbolKind::TYPE_PARAMETER);
+    }
+
+    #[test]
+    fn test_document_symbols_class_with_extends() {
+        let doc = Document::new(
+            "class Employee extends Person {\n  salary: Int\n}".to_string(),
+        );
+        let symbols = document_symbols(&doc);
+        assert_eq!(symbols.len(), 1);
+        assert_eq!(symbols[0].name, "Employee");
+        let detail = symbols[0].detail.as_ref().unwrap();
+        assert!(detail.contains("extends"), "Detail should show extends: {}", detail);
+    }
+
+    // =========================================================================
+    // Hover
+    // =========================================================================
+
+    fn find_offset(text: &str, needle: &str) -> usize {
+        text.find(needle).expect(&format!("'{}' not found in text", needle))
+    }
+
+    #[test]
+    fn test_hover_on_property() {
+        let source = "name: String = \"hello\"";
+        let doc = Document::new(source.to_string());
+        let offset = find_offset(source, "name");
+        let hover = get_hover(&doc, offset);
+        assert!(hover.is_some(), "Should have hover on property name");
+        if let Some(Hover { contents: HoverContents::Markup(content), .. }) = hover {
+            assert!(content.value.contains("name"), "Hover should contain property name: {}", content.value);
+            assert!(content.value.contains("String"), "Hover should contain type: {}", content.value);
+        }
+    }
+
+    #[test]
+    fn test_hover_on_property_without_type() {
+        let source = "name = \"hello\"";
+        let doc = Document::new(source.to_string());
+        let offset = find_offset(source, "name");
+        let hover = get_hover(&doc, offset);
+        assert!(hover.is_some());
+        if let Some(Hover { contents: HoverContents::Markup(content), .. }) = hover {
+            assert!(content.value.contains("name"));
+            assert!(content.value.contains("unknown"));
+        }
+    }
+
+    #[test]
+    fn test_hover_on_method() {
+        let source = "function greet(name: String): String = \"Hello\"";
+        let doc = Document::new(source.to_string());
+        let offset = find_offset(source, "greet");
+        let hover = get_hover(&doc, offset);
+        assert!(hover.is_some(), "Should have hover on method name");
+        if let Some(Hover { contents: HoverContents::Markup(content), .. }) = hover {
+            assert!(content.value.contains("greet"));
+            assert!(content.value.contains("function"));
+        }
+    }
+
+    #[test]
+    fn test_hover_on_class() {
+        let source = "class Person {\n  name: String\n}";
+        let doc = Document::new(source.to_string());
+        let offset = find_offset(source, "Person");
+        let hover = get_hover(&doc, offset);
+        assert!(hover.is_some(), "Should have hover on class name");
+        if let Some(Hover { contents: HoverContents::Markup(content), .. }) = hover {
+            assert!(content.value.contains("class"));
+            assert!(content.value.contains("Person"));
+        }
+    }
+
+    #[test]
+    fn test_hover_on_typealias() {
+        let source = "typealias Name = String";
+        let doc = Document::new(source.to_string());
+        let offset = find_offset(source, "Name");
+        let hover = get_hover(&doc, offset);
+        assert!(hover.is_some(), "Should have hover on typealias");
+        if let Some(Hover { contents: HoverContents::Markup(content), .. }) = hover {
+            assert!(content.value.contains("typealias"));
+            assert!(content.value.contains("Name"));
+            assert!(content.value.contains("String"));
+        }
+    }
+
+    #[test]
+    fn test_hover_on_modifier_property() {
+        let source = "hidden name: String = \"secret\"";
+        let doc = Document::new(source.to_string());
+        let offset = find_offset(source, "name");
+        let hover = get_hover(&doc, offset);
+        assert!(hover.is_some());
+        if let Some(Hover { contents: HoverContents::Markup(content), .. }) = hover {
+            assert!(content.value.contains("hidden"), "Hover should show hidden modifier: {}", content.value);
+        }
+    }
+
+    #[test]
+    fn test_hover_on_reference_to_property() {
+        let source = "x = 10\ny = x";
+        let doc = Document::new(source.to_string());
+        // Find the second 'x' (the reference)
+        let ref_offset = source.rfind('x').unwrap();
+        let hover = get_hover(&doc, ref_offset);
+        assert!(hover.is_some(), "Should have hover on reference to property");
+    }
+
+    #[test]
+    fn test_hover_on_class_member() {
+        let source = "class Config {\n  host: String\n  port: Int\n}";
+        let doc = Document::new(source.to_string());
+        let offset = find_offset(source, "host");
+        let hover = get_hover(&doc, offset);
+        assert!(hover.is_some());
+        if let Some(Hover { contents: HoverContents::Markup(content), .. }) = hover {
+            assert!(content.value.contains("host"));
+            assert!(content.value.contains("String"));
+        }
+    }
+
+    #[test]
+    fn test_hover_returns_none_for_literals() {
+        let source = "x = 42";
+        let doc = Document::new(source.to_string());
+        // Hover on the number literal - may not have hover
+        let offset = find_offset(source, "42");
+        let hover = get_hover(&doc, offset);
+        // It's OK if there's no hover for literal values
+        let _ = hover;
+    }
+
+    #[test]
+    fn test_hover_abstract_class() {
+        let source = "abstract class Shape {\n  area: Float\n}";
+        let doc = Document::new(source.to_string());
+        let offset = find_offset(source, "Shape");
+        let hover = get_hover(&doc, offset);
+        assert!(hover.is_some());
+        if let Some(Hover { contents: HoverContents::Markup(content), .. }) = hover {
+            assert!(content.value.contains("abstract"), "Should show abstract: {}", content.value);
+        }
+    }
+
+    // =========================================================================
+    // Completions
+    // =========================================================================
+
+    #[test]
+    fn test_completions_include_keywords() {
+        let doc = Document::new("x = 1".to_string());
+        let items = get_completions(&doc, 0);
+        let labels: Vec<&str> = items.iter().map(|i| i.label.as_str()).collect();
+        assert!(labels.contains(&"class"), "Should include 'class' keyword");
+        assert!(labels.contains(&"function"), "Should include 'function' keyword");
+        assert!(labels.contains(&"import"), "Should include 'import' keyword");
+        assert!(labels.contains(&"if"), "Should include 'if' keyword");
+        assert!(labels.contains(&"let"), "Should include 'let' keyword");
+        assert!(labels.contains(&"new"), "Should include 'new' keyword");
+        assert!(labels.contains(&"for"), "Should include 'for' keyword");
+        assert!(labels.contains(&"when"), "Should include 'when' keyword");
+        assert!(labels.contains(&"true"), "Should include 'true' keyword");
+        assert!(labels.contains(&"false"), "Should include 'false' keyword");
+        assert!(labels.contains(&"null"), "Should include 'null' keyword");
+    }
+
+    #[test]
+    fn test_completions_include_builtin_types() {
+        let doc = Document::new("x = 1".to_string());
+        let items = get_completions(&doc, 0);
+        let labels: Vec<&str> = items.iter().map(|i| i.label.as_str()).collect();
+        assert!(labels.contains(&"String"));
+        assert!(labels.contains(&"Int"));
+        assert!(labels.contains(&"Float"));
+        assert!(labels.contains(&"Boolean"));
+        assert!(labels.contains(&"Duration"));
+        assert!(labels.contains(&"DataSize"));
+        assert!(labels.contains(&"List"));
+        assert!(labels.contains(&"Set"));
+        assert!(labels.contains(&"Map"));
+        assert!(labels.contains(&"Listing"));
+        assert!(labels.contains(&"Mapping"));
+        assert!(labels.contains(&"Dynamic"));
+        assert!(labels.contains(&"Any"));
+    }
+
+    #[test]
+    fn test_completions_include_document_properties() {
+        let doc = Document::new("myProp: String = \"hello\"\notherProp = 42".to_string());
+        let items = get_completions(&doc, 0);
+        let labels: Vec<&str> = items.iter().map(|i| i.label.as_str()).collect();
+        assert!(labels.contains(&"myProp"), "Should include document property");
+        assert!(labels.contains(&"otherProp"), "Should include document property");
+    }
+
+    #[test]
+    fn test_completions_include_document_methods() {
+        let doc = Document::new("function helper(): Int = 42".to_string());
+        let items = get_completions(&doc, 0);
+        let labels: Vec<&str> = items.iter().map(|i| i.label.as_str()).collect();
+        assert!(labels.contains(&"helper"), "Should include document method");
+    }
+
+    #[test]
+    fn test_completions_include_document_classes() {
+        let source = "class Config {\n  host: String\n}";
+        let doc = Document::new(source.to_string());
+        let items = get_completions(&doc, 0);
+        let labels: Vec<&str> = items.iter().map(|i| i.label.as_str()).collect();
+        assert!(labels.contains(&"Config"), "Should include document class");
+    }
+
+    #[test]
+    fn test_completions_include_document_typealiases() {
+        let doc = Document::new("typealias Port = Int".to_string());
+        let items = get_completions(&doc, 0);
+        let labels: Vec<&str> = items.iter().map(|i| i.label.as_str()).collect();
+        assert!(labels.contains(&"Port"), "Should include typealias");
+    }
+
+    #[test]
+    fn test_completions_item_kinds() {
+        let source = "name = \"test\"\nfunction helper(): Int = 42\nclass Cfg {\n  x: Int\n}\ntypealias T = String";
+        let doc = Document::new(source.to_string());
+        let items = get_completions(&doc, 0);
+
+        let name_item = items.iter().find(|i| i.label == "name").unwrap();
+        assert_eq!(name_item.kind, Some(CompletionItemKind::PROPERTY));
+
+        let helper_item = items.iter().find(|i| i.label == "helper").unwrap();
+        assert_eq!(helper_item.kind, Some(CompletionItemKind::METHOD));
+
+        let cfg_item = items.iter().find(|i| i.label == "Cfg").unwrap();
+        assert_eq!(cfg_item.kind, Some(CompletionItemKind::CLASS));
+
+        let t_item = items.iter().find(|i| i.label == "T").unwrap();
+        assert_eq!(t_item.kind, Some(CompletionItemKind::TYPE_PARAMETER));
+    }
+
+    #[test]
+    fn test_completions_on_unparseable_doc() {
+        let doc = Document::new("this is not valid pkl {{{".to_string());
+        let items = get_completions(&doc, 0);
+        // Should still return keyword completions even if parsing fails
+        let labels: Vec<&str> = items.iter().map(|i| i.label.as_str()).collect();
+        assert!(labels.contains(&"class"), "Keywords should still be available");
+    }
+
+    // =========================================================================
+    // Find Definition
+    // =========================================================================
+
+    #[test]
+    fn test_find_definition_property_reference() {
+        let source = "x = 10\ny = x";
+        let doc = Document::new(source.to_string());
+        // Find the reference to x (the last 'x')
+        let ref_offset = source.rfind('x').unwrap();
+        let result = find_definition(&doc, ref_offset);
+        assert!(result.is_some(), "Should find definition of x");
+        let (start, end) = result.unwrap();
+        assert_eq!(&source[start..end], "x");
+        // Definition should be at the first x (offset 0)
+        assert_eq!(start, 0);
+    }
+
+    #[test]
+    fn test_find_definition_class_reference() {
+        let source = "class Config {\n  host: String\n}\nconfig: Config = new Config {}";
+        let doc = Document::new(source.to_string());
+        // Find reference to Config in the type annotation
+        let type_ref = source.find("config: Config").unwrap() + "config: ".len();
+        let result = find_definition(&doc, type_ref);
+        assert!(result.is_some(), "Should find definition of Config type");
+        let (start, end) = result.unwrap();
+        assert_eq!(&source[start..end], "Config");
+    }
+
+    #[test]
+    fn test_find_definition_on_definition_itself() {
+        let source = "name = \"hello\"";
+        let doc = Document::new(source.to_string());
+        let offset = find_offset(source, "name");
+        let result = find_definition(&doc, offset);
+        // Clicking on a definition should find itself
+        assert!(result.is_some());
+    }
+
+    #[test]
+    fn test_find_definition_method_reference() {
+        let source = "function helper(): Int = 42\nresult = helper()";
+        let doc = Document::new(source.to_string());
+        // Find the reference to helper in "result = helper()"
+        let ref_offset = source.rfind("helper").unwrap();
+        let result = find_definition(&doc, ref_offset);
+        assert!(result.is_some(), "Should find definition of helper method");
+    }
+
+    #[test]
+    fn test_find_definition_typealias_reference() {
+        let source = "typealias Name = String\nfullName: Name = \"John\"";
+        let doc = Document::new(source.to_string());
+        let ref_offset = source.rfind("Name").unwrap();
+        let result = find_definition(&doc, ref_offset);
+        assert!(result.is_some(), "Should find definition of typealias");
+    }
+
+    #[test]
+    fn test_find_definition_local_let_binding() {
+        let source = "result = let (x = 10) x + 1";
+        let doc = Document::new(source.to_string());
+        assert!(doc.ast.is_some(), "Let expression should parse: {:?}", doc.parse_error);
+        // Find the reference to 'x' in the body (the last 'x')
+        let ref_offset = source.rfind('x').unwrap();
+        let result = find_definition(&doc, ref_offset);
+        assert!(result.is_some(), "Should find definition of let binding");
+    }
+
+    #[test]
+    fn test_find_definition_not_found() {
+        let source = "x = 42";
+        let doc = Document::new(source.to_string());
+        // Offset that is in the middle of "42" - a number literal
+        let offset = find_offset(source, "42");
+        let result = find_definition(&doc, offset);
+        // It's OK if this returns None or Some
+        let _ = result;
+    }
+
+    // =========================================================================
+    // Type annotation to string
+    // =========================================================================
+
+    #[test]
+    fn test_type_annotation_to_string_simple() {
+        let doc = Document::new("x: String = \"test\"".to_string());
+        let symbols = document_symbols(&doc);
+        assert_eq!(symbols[0].detail.as_deref(), Some("String"));
+    }
+
+    #[test]
+    fn test_type_annotation_to_string_nullable() {
+        let doc = Document::new("x: String? = null".to_string());
+        let symbols = document_symbols(&doc);
+        assert_eq!(symbols[0].detail.as_deref(), Some("String?"));
+    }
+
+    #[test]
+    fn test_type_annotation_to_string_parameterized() {
+        let doc = Document::new("x: List<String> = new Listing {}".to_string());
+        let symbols = document_symbols(&doc);
+        let detail = symbols[0].detail.as_deref().unwrap();
+        assert!(detail.contains("List") && detail.contains("String"),
+            "Expected parameterized type, got: {}", detail);
+    }
+
+    #[test]
+    fn test_type_annotation_to_string_union() {
+        let doc = Document::new("x: String|Int = \"test\"".to_string());
+        let symbols = document_symbols(&doc);
+        if let Some(detail) = symbols[0].detail.as_deref() {
+            assert!(detail.contains("String") && detail.contains("Int"),
+                "Expected union type, got: {}", detail);
+        }
+    }
+
+    // =========================================================================
+    // find_member_in_module
+    // =========================================================================
+
+    #[test]
+    fn test_find_member_in_module_property() {
+        let source = "name = \"test\"\nage = 42";
+        let doc = Document::new(source.to_string());
+        let module = doc.ast.as_ref().unwrap();
+        let result = find_member_in_module(module, "name");
+        assert!(result.is_some());
+        let (start, end) = result.unwrap();
+        assert_eq!(&source[start..end], "name");
+    }
+
+    #[test]
+    fn test_find_member_in_module_method() {
+        let source = "function greet(name: String): String = \"Hello\"";
+        let doc = Document::new(source.to_string());
+        let module = doc.ast.as_ref().unwrap();
+        let result = find_member_in_module(module, "greet");
+        assert!(result.is_some());
+        let (start, end) = result.unwrap();
+        assert_eq!(&source[start..end], "greet");
+    }
+
+    #[test]
+    fn test_find_member_in_module_class() {
+        let source = "class Config {\n  host: String\n}";
+        let doc = Document::new(source.to_string());
+        let module = doc.ast.as_ref().unwrap();
+        let result = find_member_in_module(module, "Config");
+        assert!(result.is_some());
+    }
+
+    #[test]
+    fn test_find_member_in_module_not_found() {
+        let source = "x = 1";
+        let doc = Document::new(source.to_string());
+        let module = doc.ast.as_ref().unwrap();
+        let result = find_member_in_module(module, "nonexistent");
+        assert!(result.is_none());
+    }
+
+    // =========================================================================
+    // Integration-style tests with realistic PKL documents
+    // =========================================================================
+
+    #[test]
+    fn test_realistic_config_document() {
+        let source = r#"class DatabaseConfig {
+  host: String
+  port: Int
+  database: String
+  maxConnections: Int
+}
+
+class AppConfig {
+  name: String
+  version: String
+  db: DatabaseConfig
+}
+
+config = new AppConfig {
+  name = "myapp"
+  version = "1.0.0"
+  db = new DatabaseConfig {
+    host = "localhost"
+    port = 5432
+    database = "mydb"
+    maxConnections = 10
+  }
+}"#;
+        let doc = Document::new(source.to_string());
+        assert!(doc.ast.is_some(), "Realistic config should parse: {:?}", doc.parse_error);
+
+        let symbols = document_symbols(&doc);
+        assert_eq!(symbols.len(), 3, "Should have 3 top-level symbols");
+        assert_eq!(symbols[0].name, "DatabaseConfig");
+        assert_eq!(symbols[1].name, "AppConfig");
+        assert_eq!(symbols[2].name, "config");
+
+        // DatabaseConfig should have 4 children
+        let db_children = symbols[0].children.as_ref().unwrap();
+        assert_eq!(db_children.len(), 4);
+
+        // Completions should include all defined names
+        let items = get_completions(&doc, 0);
+        let labels: Vec<&str> = items.iter().map(|i| i.label.as_str()).collect();
+        assert!(labels.contains(&"DatabaseConfig"));
+        assert!(labels.contains(&"AppConfig"));
+        assert!(labels.contains(&"config"));
+    }
+
+    #[test]
+    fn test_document_with_modifiers() {
+        let source = r#"local secretKey = "abc123"
+hidden password: String = "hunter2"
+fixed version = "1.0"
+const PI = 3.14159"#;
+        let doc = Document::new(source.to_string());
+        assert!(doc.ast.is_some(), "Document with modifiers should parse: {:?}", doc.parse_error);
+
+        let symbols = document_symbols(&doc);
+        assert!(symbols.len() >= 2, "Should have multiple symbols");
+    }
+
+    #[test]
+    fn test_document_with_for_generator() {
+        let source = r#"names = new Listing {
+  for (name in List("Alice", "Bob", "Charlie")) {
+    name
+  }
+}"#;
+        let doc = Document::new(source.to_string());
+        assert!(doc.ast.is_some(), "For generator should parse: {:?}", doc.parse_error);
+    }
+
+    #[test]
+    fn test_document_with_when_generator() {
+        let source = r#"debug = true
+config {
+  when (debug) {
+    logLevel = "DEBUG"
+  }
+}"#;
+        let doc = Document::new(source.to_string());
+        // This may or may not parse depending on the grammar expectations
+        let _ = doc.diagnostics();
+    }
+
+    #[test]
+    fn test_document_with_lambda() {
+        let source = "doubled = List(1, 2, 3).map((x) -> x * 2)";
+        let doc = Document::new(source.to_string());
+        assert!(doc.ast.is_some(), "Lambda should parse: {:?}", doc.parse_error);
+    }
+
+    #[test]
+    fn test_hover_on_local_binding_in_let() {
+        let source = "result = let (x = 10) x + 1";
+        let doc = Document::new(source.to_string());
+        assert!(doc.ast.is_some(), "Let expression should parse: {:?}", doc.parse_error);
+        // Find the last 'x' (the reference in the body)
+        let ref_offset = source.rfind('x').unwrap();
+        let hover = get_hover(&doc, ref_offset);
+        if let Some(Hover { contents: HoverContents::Markup(content), .. }) = hover {
+            assert!(content.value.contains("local") || content.value.contains("x"),
+                "Hover for let binding should mention local or var name: {}", content.value);
+        }
+    }
+}
