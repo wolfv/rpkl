@@ -1,0 +1,14 @@
+class Config {
+  host: String
+  port: Int
+  debug: Boolean
+}
+
+config = new Config {
+  host = "localhost"
+  port = 8080
+  debug = true
+}
+
+name = "test"
+version = "1.0.0"
