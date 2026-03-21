@@ -583,7 +583,10 @@ mod tests {
     fn test_semantic_tokens_property() {
         let doc = Document::new("name = \"hello\"".to_string());
         let tokens = semantic_tokens_full(&doc);
-        assert!(!tokens.is_empty(), "Should have semantic tokens for property");
+        assert!(
+            !tokens.is_empty(),
+            "Should have semantic tokens for property"
+        );
         // First token should be the property name
         let first = &tokens[0];
         assert_eq!(first.token_type, TokenType::Property as u32);
@@ -597,22 +600,35 @@ mod tests {
 
         // Should have at least: class name, property name, type name
         let types: Vec<u32> = tokens.iter().map(|t| t.token_type).collect();
-        assert!(types.contains(&(TokenType::Class as u32)), "Should have class token");
-        assert!(types.contains(&(TokenType::Property as u32)), "Should have property token");
-        assert!(types.contains(&(TokenType::Type as u32)), "Should have type token");
+        assert!(
+            types.contains(&(TokenType::Class as u32)),
+            "Should have class token"
+        );
+        assert!(
+            types.contains(&(TokenType::Property as u32)),
+            "Should have property token"
+        );
+        assert!(
+            types.contains(&(TokenType::Type as u32)),
+            "Should have type token"
+        );
     }
 
     #[test]
     fn test_semantic_tokens_method() {
-        let doc = Document::new(
-            "function greet(name: String): String = \"Hello\"".to_string(),
-        );
+        let doc = Document::new("function greet(name: String): String = \"Hello\"".to_string());
         let tokens = semantic_tokens_full(&doc);
         assert!(!tokens.is_empty());
 
         let types: Vec<u32> = tokens.iter().map(|t| t.token_type).collect();
-        assert!(types.contains(&(TokenType::Method as u32)), "Should have method token");
-        assert!(types.contains(&(TokenType::Parameter as u32)), "Should have parameter token");
+        assert!(
+            types.contains(&(TokenType::Method as u32)),
+            "Should have method token"
+        );
+        assert!(
+            types.contains(&(TokenType::Parameter as u32)),
+            "Should have parameter token"
+        );
     }
 
     #[test]
@@ -620,7 +636,10 @@ mod tests {
         let doc = Document::new("x = 42".to_string());
         let tokens = semantic_tokens_full(&doc);
         let types: Vec<u32> = tokens.iter().map(|t| t.token_type).collect();
-        assert!(types.contains(&(TokenType::Number as u32)), "Should have number token");
+        assert!(
+            types.contains(&(TokenType::Number as u32)),
+            "Should have number token"
+        );
     }
 
     #[test]
@@ -628,7 +647,10 @@ mod tests {
         let doc = Document::new("x = \"hello\"".to_string());
         let tokens = semantic_tokens_full(&doc);
         let types: Vec<u32> = tokens.iter().map(|t| t.token_type).collect();
-        assert!(types.contains(&(TokenType::String as u32)), "Should have string token");
+        assert!(
+            types.contains(&(TokenType::String as u32)),
+            "Should have string token"
+        );
     }
 
     #[test]
@@ -636,7 +658,10 @@ mod tests {
         let doc = Document::new("x = true".to_string());
         let tokens = semantic_tokens_full(&doc);
         let types: Vec<u32> = tokens.iter().map(|t| t.token_type).collect();
-        assert!(types.contains(&(TokenType::Keyword as u32)), "Should have keyword token for true");
+        assert!(
+            types.contains(&(TokenType::Keyword as u32)),
+            "Should have keyword token for true"
+        );
     }
 
     #[test]
@@ -644,7 +669,10 @@ mod tests {
         let doc = Document::new("x = null".to_string());
         let tokens = semantic_tokens_full(&doc);
         let types: Vec<u32> = tokens.iter().map(|t| t.token_type).collect();
-        assert!(types.contains(&(TokenType::Keyword as u32)), "Should have keyword token for null");
+        assert!(
+            types.contains(&(TokenType::Keyword as u32)),
+            "Should have keyword token for null"
+        );
     }
 
     #[test]
@@ -654,10 +682,12 @@ mod tests {
         assert!(tokens.len() >= 4, "Should have tokens for both lines");
 
         // Verify delta encoding: tokens on different lines should have delta_line > 0
-        let second_line_tokens: Vec<&SemanticToken> = tokens.iter()
-            .filter(|t| t.delta_line > 0)
-            .collect();
-        assert!(!second_line_tokens.is_empty(), "Should have tokens on second line with delta_line > 0");
+        let second_line_tokens: Vec<&SemanticToken> =
+            tokens.iter().filter(|t| t.delta_line > 0).collect();
+        assert!(
+            !second_line_tokens.is_empty(),
+            "Should have tokens on second line with delta_line > 0"
+        );
     }
 
     #[test]
@@ -665,7 +695,10 @@ mod tests {
         let doc = Document::new("x = 10\ny = x".to_string());
         let tokens = semantic_tokens_full(&doc);
         let types: Vec<u32> = tokens.iter().map(|t| t.token_type).collect();
-        assert!(types.contains(&(TokenType::Variable as u32)), "Should have variable token for identifier reference");
+        assert!(
+            types.contains(&(TokenType::Variable as u32)),
+            "Should have variable token for identifier reference"
+        );
     }
 
     #[test]
@@ -673,8 +706,14 @@ mod tests {
         let doc = Document::new("x = obj.field".to_string());
         let tokens = semantic_tokens_full(&doc);
         let types: Vec<u32> = tokens.iter().map(|t| t.token_type).collect();
-        assert!(types.contains(&(TokenType::Property as u32)), "Should have property token for member access");
-        assert!(types.contains(&(TokenType::Variable as u32)), "Should have variable token for base");
+        assert!(
+            types.contains(&(TokenType::Property as u32)),
+            "Should have property token for member access"
+        );
+        assert!(
+            types.contains(&(TokenType::Variable as u32)),
+            "Should have variable token for base"
+        );
     }
 
     #[test]
@@ -682,7 +721,10 @@ mod tests {
         let doc = Document::new("class Container<T> {\n  value: T\n}".to_string());
         let tokens = semantic_tokens_full(&doc);
         let types: Vec<u32> = tokens.iter().map(|t| t.token_type).collect();
-        assert!(types.contains(&(TokenType::TypeParameter as u32)), "Should have type parameter token");
+        assert!(
+            types.contains(&(TokenType::TypeParameter as u32)),
+            "Should have type parameter token"
+        );
     }
 
     #[test]
@@ -690,7 +732,10 @@ mod tests {
         let doc = Document::new("typealias Name = String".to_string());
         let tokens = semantic_tokens_full(&doc);
         let types: Vec<u32> = tokens.iter().map(|t| t.token_type).collect();
-        assert!(types.contains(&(TokenType::Type as u32)), "Should have type token");
+        assert!(
+            types.contains(&(TokenType::Type as u32)),
+            "Should have type token"
+        );
     }
 
     #[test]
@@ -699,7 +744,10 @@ mod tests {
         let tokens = semantic_tokens_full(&doc);
         assert!(!tokens.is_empty());
         let types: Vec<u32> = tokens.iter().map(|t| t.token_type).collect();
-        assert!(types.contains(&(TokenType::Parameter as u32)), "Should have parameter tokens for lambda params");
+        assert!(
+            types.contains(&(TokenType::Parameter as u32)),
+            "Should have parameter tokens for lambda params"
+        );
     }
 
     #[test]
@@ -708,7 +756,10 @@ mod tests {
         let tokens = semantic_tokens_full(&doc);
         assert!(!tokens.is_empty());
         let types: Vec<u32> = tokens.iter().map(|t| t.token_type).collect();
-        assert!(types.contains(&(TokenType::Variable as u32)), "Should have variable token for let binding");
+        assert!(
+            types.contains(&(TokenType::Variable as u32)),
+            "Should have variable token for let binding"
+        );
     }
 
     #[test]
@@ -717,7 +768,10 @@ mod tests {
         let doc = Document::new(source.to_string());
         let tokens = semantic_tokens_full(&doc);
         let types: Vec<u32> = tokens.iter().map(|t| t.token_type).collect();
-        assert!(types.contains(&(TokenType::Type as u32)), "Should have type token for new class ref");
+        assert!(
+            types.contains(&(TokenType::Type as u32)),
+            "Should have type token for new class ref"
+        );
     }
 
     #[test]
@@ -757,7 +811,10 @@ function createConfig(host: String, port: Int): Config = new Config {
 defaultConfig = createConfig("localhost", 8080)"#;
         let doc = Document::new(source.to_string());
         let tokens = semantic_tokens_full(&doc);
-        assert!(!tokens.is_empty(), "Complex document should have semantic tokens");
+        assert!(
+            !tokens.is_empty(),
+            "Complex document should have semantic tokens"
+        );
 
         // Verify that token positions are valid (no negative deltas)
         for token in &tokens {
@@ -771,7 +828,10 @@ defaultConfig = createConfig("localhost", 8080)"#;
         let tokens = semantic_tokens_full(&doc);
         // Import URI should be highlighted as string
         let types: Vec<u32> = tokens.iter().map(|t| t.token_type).collect();
-        assert!(types.contains(&(TokenType::String as u32)), "Import URI should be highlighted as string");
+        assert!(
+            types.contains(&(TokenType::String as u32)),
+            "Import URI should be highlighted as string"
+        );
     }
 
     #[test]
@@ -780,7 +840,10 @@ defaultConfig = createConfig("localhost", 8080)"#;
         let tokens = semantic_tokens_full(&doc);
         let types: Vec<u32> = tokens.iter().map(|t| t.token_type).collect();
         assert!(types.contains(&(TokenType::String as u32)));
-        assert!(types.contains(&(TokenType::Variable as u32)), "Import alias should be highlighted as variable");
+        assert!(
+            types.contains(&(TokenType::Variable as u32)),
+            "Import alias should be highlighted as variable"
+        );
     }
 
     #[test]
@@ -789,6 +852,9 @@ defaultConfig = createConfig("localhost", 8080)"#;
         let tokens = semantic_tokens_full(&doc);
         let types: Vec<u32> = tokens.iter().map(|t| t.token_type).collect();
         assert!(types.contains(&(TokenType::Class as u32)));
-        assert!(types.contains(&(TokenType::Type as u32)), "Extends type should be highlighted");
+        assert!(
+            types.contains(&(TokenType::Type as u32)),
+            "Extends type should be highlighted"
+        );
     }
 }

@@ -1622,9 +1622,7 @@ mod tests {
 
     #[test]
     fn test_document_symbols_class() {
-        let doc = Document::new(
-            "class Person {\n  name: String\n  age: Int\n}".to_string(),
-        );
+        let doc = Document::new("class Person {\n  name: String\n  age: Int\n}".to_string());
         let symbols = document_symbols(&doc);
         assert_eq!(symbols.len(), 1);
         assert_eq!(symbols[0].name, "Person");
@@ -1638,16 +1636,18 @@ mod tests {
 
     #[test]
     fn test_document_symbols_method() {
-        let doc = Document::new(
-            "function greet(name: String): String = \"Hello\"".to_string(),
-        );
+        let doc = Document::new("function greet(name: String): String = \"Hello\"".to_string());
         let symbols = document_symbols(&doc);
         assert_eq!(symbols.len(), 1);
         assert_eq!(symbols[0].name, "greet");
         assert_eq!(symbols[0].kind, SymbolKind::METHOD);
         // Detail should include params and return type
         let detail = symbols[0].detail.as_ref().unwrap();
-        assert!(detail.contains("name: String"), "Detail should contain params: {}", detail);
+        assert!(
+            detail.contains("name: String"),
+            "Detail should contain params: {}",
+            detail
+        );
     }
 
     #[test]
@@ -1679,14 +1679,16 @@ typealias Port = Int"#;
 
     #[test]
     fn test_document_symbols_class_with_extends() {
-        let doc = Document::new(
-            "class Employee extends Person {\n  salary: Int\n}".to_string(),
-        );
+        let doc = Document::new("class Employee extends Person {\n  salary: Int\n}".to_string());
         let symbols = document_symbols(&doc);
         assert_eq!(symbols.len(), 1);
         assert_eq!(symbols[0].name, "Employee");
         let detail = symbols[0].detail.as_ref().unwrap();
-        assert!(detail.contains("extends"), "Detail should show extends: {}", detail);
+        assert!(
+            detail.contains("extends"),
+            "Detail should show extends: {}",
+            detail
+        );
     }
 
     // =========================================================================
@@ -1694,7 +1696,8 @@ typealias Port = Int"#;
     // =========================================================================
 
     fn find_offset(text: &str, needle: &str) -> usize {
-        text.find(needle).unwrap_or_else(|| panic!("'{}' not found in text", needle))
+        text.find(needle)
+            .unwrap_or_else(|| panic!("'{}' not found in text", needle))
     }
 
     #[test]
@@ -1704,9 +1707,21 @@ typealias Port = Int"#;
         let offset = find_offset(source, "name");
         let hover = get_hover(&doc, offset);
         assert!(hover.is_some(), "Should have hover on property name");
-        if let Some(Hover { contents: HoverContents::Markup(content), .. }) = hover {
-            assert!(content.value.contains("name"), "Hover should contain property name: {}", content.value);
-            assert!(content.value.contains("String"), "Hover should contain type: {}", content.value);
+        if let Some(Hover {
+            contents: HoverContents::Markup(content),
+            ..
+        }) = hover
+        {
+            assert!(
+                content.value.contains("name"),
+                "Hover should contain property name: {}",
+                content.value
+            );
+            assert!(
+                content.value.contains("String"),
+                "Hover should contain type: {}",
+                content.value
+            );
         }
     }
 
@@ -1717,7 +1732,11 @@ typealias Port = Int"#;
         let offset = find_offset(source, "name");
         let hover = get_hover(&doc, offset);
         assert!(hover.is_some());
-        if let Some(Hover { contents: HoverContents::Markup(content), .. }) = hover {
+        if let Some(Hover {
+            contents: HoverContents::Markup(content),
+            ..
+        }) = hover
+        {
             assert!(content.value.contains("name"));
             assert!(content.value.contains("unknown"));
         }
@@ -1730,7 +1749,11 @@ typealias Port = Int"#;
         let offset = find_offset(source, "greet");
         let hover = get_hover(&doc, offset);
         assert!(hover.is_some(), "Should have hover on method name");
-        if let Some(Hover { contents: HoverContents::Markup(content), .. }) = hover {
+        if let Some(Hover {
+            contents: HoverContents::Markup(content),
+            ..
+        }) = hover
+        {
             assert!(content.value.contains("greet"));
             assert!(content.value.contains("function"));
         }
@@ -1743,7 +1766,11 @@ typealias Port = Int"#;
         let offset = find_offset(source, "Person");
         let hover = get_hover(&doc, offset);
         assert!(hover.is_some(), "Should have hover on class name");
-        if let Some(Hover { contents: HoverContents::Markup(content), .. }) = hover {
+        if let Some(Hover {
+            contents: HoverContents::Markup(content),
+            ..
+        }) = hover
+        {
             assert!(content.value.contains("class"));
             assert!(content.value.contains("Person"));
         }
@@ -1756,7 +1783,11 @@ typealias Port = Int"#;
         let offset = find_offset(source, "Name");
         let hover = get_hover(&doc, offset);
         assert!(hover.is_some(), "Should have hover on typealias");
-        if let Some(Hover { contents: HoverContents::Markup(content), .. }) = hover {
+        if let Some(Hover {
+            contents: HoverContents::Markup(content),
+            ..
+        }) = hover
+        {
             assert!(content.value.contains("typealias"));
             assert!(content.value.contains("Name"));
             assert!(content.value.contains("String"));
@@ -1770,8 +1801,16 @@ typealias Port = Int"#;
         let offset = find_offset(source, "name");
         let hover = get_hover(&doc, offset);
         assert!(hover.is_some());
-        if let Some(Hover { contents: HoverContents::Markup(content), .. }) = hover {
-            assert!(content.value.contains("hidden"), "Hover should show hidden modifier: {}", content.value);
+        if let Some(Hover {
+            contents: HoverContents::Markup(content),
+            ..
+        }) = hover
+        {
+            assert!(
+                content.value.contains("hidden"),
+                "Hover should show hidden modifier: {}",
+                content.value
+            );
         }
     }
 
@@ -1782,7 +1821,10 @@ typealias Port = Int"#;
         // Find the second 'x' (the reference)
         let ref_offset = source.rfind('x').unwrap();
         let hover = get_hover(&doc, ref_offset);
-        assert!(hover.is_some(), "Should have hover on reference to property");
+        assert!(
+            hover.is_some(),
+            "Should have hover on reference to property"
+        );
     }
 
     #[test]
@@ -1792,7 +1834,11 @@ typealias Port = Int"#;
         let offset = find_offset(source, "host");
         let hover = get_hover(&doc, offset);
         assert!(hover.is_some());
-        if let Some(Hover { contents: HoverContents::Markup(content), .. }) = hover {
+        if let Some(Hover {
+            contents: HoverContents::Markup(content),
+            ..
+        }) = hover
+        {
             assert!(content.value.contains("host"));
             assert!(content.value.contains("String"));
         }
@@ -1816,8 +1862,16 @@ typealias Port = Int"#;
         let offset = find_offset(source, "Shape");
         let hover = get_hover(&doc, offset);
         assert!(hover.is_some());
-        if let Some(Hover { contents: HoverContents::Markup(content), .. }) = hover {
-            assert!(content.value.contains("abstract"), "Should show abstract: {}", content.value);
+        if let Some(Hover {
+            contents: HoverContents::Markup(content),
+            ..
+        }) = hover
+        {
+            assert!(
+                content.value.contains("abstract"),
+                "Should show abstract: {}",
+                content.value
+            );
         }
     }
 
@@ -1831,8 +1885,14 @@ typealias Port = Int"#;
         let items = get_completions(&doc, 0);
         let labels: Vec<&str> = items.iter().map(|i| i.label.as_str()).collect();
         assert!(labels.contains(&"class"), "Should include 'class' keyword");
-        assert!(labels.contains(&"function"), "Should include 'function' keyword");
-        assert!(labels.contains(&"import"), "Should include 'import' keyword");
+        assert!(
+            labels.contains(&"function"),
+            "Should include 'function' keyword"
+        );
+        assert!(
+            labels.contains(&"import"),
+            "Should include 'import' keyword"
+        );
         assert!(labels.contains(&"if"), "Should include 'if' keyword");
         assert!(labels.contains(&"let"), "Should include 'let' keyword");
         assert!(labels.contains(&"new"), "Should include 'new' keyword");
@@ -1868,8 +1928,14 @@ typealias Port = Int"#;
         let doc = Document::new("myProp: String = \"hello\"\notherProp = 42".to_string());
         let items = get_completions(&doc, 0);
         let labels: Vec<&str> = items.iter().map(|i| i.label.as_str()).collect();
-        assert!(labels.contains(&"myProp"), "Should include document property");
-        assert!(labels.contains(&"otherProp"), "Should include document property");
+        assert!(
+            labels.contains(&"myProp"),
+            "Should include document property"
+        );
+        assert!(
+            labels.contains(&"otherProp"),
+            "Should include document property"
+        );
     }
 
     #[test]
@@ -1922,7 +1988,10 @@ typealias Port = Int"#;
         let items = get_completions(&doc, 0);
         // Should still return keyword completions even if parsing fails
         let labels: Vec<&str> = items.iter().map(|i| i.label.as_str()).collect();
-        assert!(labels.contains(&"class"), "Keywords should still be available");
+        assert!(
+            labels.contains(&"class"),
+            "Keywords should still be available"
+        );
     }
 
     // =========================================================================
@@ -1988,7 +2057,11 @@ typealias Port = Int"#;
     fn test_find_definition_local_let_binding() {
         let source = "result = let (x = 10) x + 1";
         let doc = Document::new(source.to_string());
-        assert!(doc.ast.is_some(), "Let expression should parse: {:?}", doc.parse_error);
+        assert!(
+            doc.ast.is_some(),
+            "Let expression should parse: {:?}",
+            doc.parse_error
+        );
         // Find the reference to 'x' in the body (the last 'x')
         let ref_offset = source.rfind('x').unwrap();
         let result = find_definition(&doc, ref_offset);
@@ -2029,8 +2102,11 @@ typealias Port = Int"#;
         let doc = Document::new("x: List<String> = new Listing {}".to_string());
         let symbols = document_symbols(&doc);
         let detail = symbols[0].detail.as_deref().unwrap();
-        assert!(detail.contains("List") && detail.contains("String"),
-            "Expected parameterized type, got: {}", detail);
+        assert!(
+            detail.contains("List") && detail.contains("String"),
+            "Expected parameterized type, got: {}",
+            detail
+        );
     }
 
     #[test]
@@ -2038,8 +2114,11 @@ typealias Port = Int"#;
         let doc = Document::new("x: String|Int = \"test\"".to_string());
         let symbols = document_symbols(&doc);
         if let Some(detail) = symbols[0].detail.as_deref() {
-            assert!(detail.contains("String") && detail.contains("Int"),
-                "Expected union type, got: {}", detail);
+            assert!(
+                detail.contains("String") && detail.contains("Int"),
+                "Expected union type, got: {}",
+                detail
+            );
         }
     }
 
@@ -2117,7 +2196,11 @@ config = new AppConfig {
   }
 }"#;
         let doc = Document::new(source.to_string());
-        assert!(doc.ast.is_some(), "Realistic config should parse: {:?}", doc.parse_error);
+        assert!(
+            doc.ast.is_some(),
+            "Realistic config should parse: {:?}",
+            doc.parse_error
+        );
 
         let symbols = document_symbols(&doc);
         assert_eq!(symbols.len(), 3, "Should have 3 top-level symbols");
@@ -2144,7 +2227,11 @@ hidden password: String = "hunter2"
 fixed version = "1.0"
 const PI = 3.14159"#;
         let doc = Document::new(source.to_string());
-        assert!(doc.ast.is_some(), "Document with modifiers should parse: {:?}", doc.parse_error);
+        assert!(
+            doc.ast.is_some(),
+            "Document with modifiers should parse: {:?}",
+            doc.parse_error
+        );
 
         let symbols = document_symbols(&doc);
         assert!(symbols.len() >= 2, "Should have multiple symbols");
@@ -2158,7 +2245,11 @@ const PI = 3.14159"#;
   }
 }"#;
         let doc = Document::new(source.to_string());
-        assert!(doc.ast.is_some(), "For generator should parse: {:?}", doc.parse_error);
+        assert!(
+            doc.ast.is_some(),
+            "For generator should parse: {:?}",
+            doc.parse_error
+        );
     }
 
     #[test]
@@ -2178,20 +2269,35 @@ config {
     fn test_document_with_lambda() {
         let source = "doubled = List(1, 2, 3).map((x) -> x * 2)";
         let doc = Document::new(source.to_string());
-        assert!(doc.ast.is_some(), "Lambda should parse: {:?}", doc.parse_error);
+        assert!(
+            doc.ast.is_some(),
+            "Lambda should parse: {:?}",
+            doc.parse_error
+        );
     }
 
     #[test]
     fn test_hover_on_local_binding_in_let() {
         let source = "result = let (x = 10) x + 1";
         let doc = Document::new(source.to_string());
-        assert!(doc.ast.is_some(), "Let expression should parse: {:?}", doc.parse_error);
+        assert!(
+            doc.ast.is_some(),
+            "Let expression should parse: {:?}",
+            doc.parse_error
+        );
         // Find the last 'x' (the reference in the body)
         let ref_offset = source.rfind('x').unwrap();
         let hover = get_hover(&doc, ref_offset);
-        if let Some(Hover { contents: HoverContents::Markup(content), .. }) = hover {
-            assert!(content.value.contains("local") || content.value.contains("x"),
-                "Hover for let binding should mention local or var name: {}", content.value);
+        if let Some(Hover {
+            contents: HoverContents::Markup(content),
+            ..
+        }) = hover
+        {
+            assert!(
+                content.value.contains("local") || content.value.contains("x"),
+                "Hover for let binding should mention local or var name: {}",
+                content.value
+            );
         }
     }
 }

@@ -356,8 +356,20 @@ mod tests {
         let doc = Document::new("name = \"hello\"".to_string());
         let span = Span { start: 0, end: 4 };
         let range = doc.span_to_range(span);
-        assert_eq!(range.start, Position { line: 0, character: 0 });
-        assert_eq!(range.end, Position { line: 0, character: 4 });
+        assert_eq!(
+            range.start,
+            Position {
+                line: 0,
+                character: 0
+            }
+        );
+        assert_eq!(
+            range.end,
+            Position {
+                line: 0,
+                character: 4
+            }
+        );
     }
 
     #[test]
@@ -387,7 +399,8 @@ mod tests {
 
     #[test]
     fn test_parse_error_location_arrow_format() {
-        let error = " --> 3:10\n  |\n3 | bad stuff\n  |          ^---\n  |\n  = expected identifier";
+        let error =
+            " --> 3:10\n  |\n3 | bad stuff\n  |          ^---\n  |\n  = expected identifier";
         let line_offsets = vec![0, 10, 20];
         let text = "line one\nline two\nline three";
         let (range, message) = parse_error_location(error, &line_offsets, text);
@@ -427,18 +440,14 @@ mod tests {
 
     #[test]
     fn test_parse_class_definition() {
-        let doc = Document::new(
-            "class Person {\n  name: String\n  age: Int\n}".to_string(),
-        );
+        let doc = Document::new("class Person {\n  name: String\n  age: Int\n}".to_string());
         assert!(doc.ast.is_some());
         assert!(doc.parse_error.is_none());
     }
 
     #[test]
     fn test_parse_import() {
-        let doc = Document::new(
-            "import \"./other.pkl\"\n\nname = other.value".to_string(),
-        );
+        let doc = Document::new("import \"./other.pkl\"\n\nname = other.value".to_string());
         // Parser may or may not handle this depending on grammar specifics
         // At minimum it shouldn't panic
         let _ = doc.diagnostics();
@@ -446,9 +455,8 @@ mod tests {
 
     #[test]
     fn test_parse_method() {
-        let doc = Document::new(
-            "function greet(name: String): String = \"Hello, \\(name)\"".to_string(),
-        );
+        let doc =
+            Document::new("function greet(name: String): String = \"Hello, \\(name)\"".to_string());
         assert!(doc.ast.is_some(), "Method should parse successfully");
     }
 
@@ -479,6 +487,10 @@ items = new Listing {
 }
 "#;
         let doc = Document::new(source.to_string());
-        assert!(doc.ast.is_some(), "Complex document should parse: {:?}", doc.parse_error);
+        assert!(
+            doc.ast.is_some(),
+            "Complex document should parse: {:?}",
+            doc.parse_error
+        );
     }
 }
