@@ -1435,7 +1435,7 @@ dependencies = [
 
 [[package]]
 name = "rpkl"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "clap",
  "rpkl-parser",
@@ -1449,7 +1449,7 @@ dependencies = [
 
 [[package]]
 name = "rpkl-lsp"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "async-trait",
  "dashmap 6.1.0",
@@ -1467,7 +1467,7 @@ dependencies = [
 
 [[package]]
 name = "rpkl-parser"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "pest",
  "pest_derive",
@@ -1477,7 +1477,7 @@ dependencies = [
 
 [[package]]
 name = "rpkl-runtime"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "dirs",
  "hex",
@@ -1497,7 +1497,7 @@ dependencies = [
 
 [[package]]
 name = "rpkl-stdlib"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "base64",
  "indexmap",
