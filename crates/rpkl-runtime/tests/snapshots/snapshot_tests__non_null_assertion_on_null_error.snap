@@ -1,0 +1,7 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+expression: eval_pkl(source)
+---
+{
+  "r1": "Null pointer exception: Non-null assertion failed"
+}

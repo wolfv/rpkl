@@ -1,0 +1,12 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+expression: eval_pkl(source)
+---
+{
+  "r1": "1.5h",
+  "r2": "1.5d",
+  "r3": "6s",
+  "r4": "5min",
+  "r5": "1.5h",
+  "r6": "0.9583333333333334d"
+}

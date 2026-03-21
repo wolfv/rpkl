@@ -1,0 +1,10 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+expression: eval_pkl_result(source)
+---
+Parse error: Syntax error:  --> 2:14
+  |
+2 |         r1 = #"""
+  |              ^---
+  |
+  = expected prefix_expr

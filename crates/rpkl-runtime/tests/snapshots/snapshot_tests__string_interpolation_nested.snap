@@ -1,0 +1,9 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+expression: eval_pkl(source)
+---
+{
+  "name": "world",
+  "r1": "hello dear world",
+  "r2": "deep"
+}

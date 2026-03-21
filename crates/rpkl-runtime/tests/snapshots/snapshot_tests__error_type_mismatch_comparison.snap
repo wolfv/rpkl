@@ -1,0 +1,8 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+expression: eval_pkl(source)
+---
+{
+  "r1": "Type error: expected comparable types, got String and Int",
+  "r2": "Type error: expected comparable types, got Boolean and Boolean"
+}

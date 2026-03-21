@@ -1,0 +1,15 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+expression: eval_pkl(source)
+---
+{
+  "team": {
+    "name": "Engineering",
+    "members": [
+      "Alice",
+      "Bob",
+      "Charlie"
+    ],
+    "size": 3
+  }
+}

@@ -1,0 +1,13 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+expression: eval_pkl(source)
+---
+{
+  "l": [
+    1,
+    2,
+    3
+  ],
+  "r1": "Index out of bounds: 10 (length: 3)",
+  "r2": 3
+}

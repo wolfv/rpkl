@@ -1,0 +1,11 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+expression: eval_pkl(source)
+---
+{
+  "r1": "Invalid operation: List is empty",
+  "r2": "Invalid operation: List is empty",
+  "r3": "Invalid operation: Expected list with single element, got 0 elements",
+  "r4": "Invalid operation: Cannot get min of empty list",
+  "r5": "Invalid operation: Cannot get max of empty list"
+}

@@ -1,0 +1,8 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+expression: eval_pkl(source)
+---
+{
+  "r1": "Type error: expected numeric or string, got String and Int",
+  "r2": "Type error: expected numeric or string, got Boolean and Int"
+}

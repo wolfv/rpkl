@@ -1,0 +1,10 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+expression: eval_pkl(source)
+---
+{
+  "x": 10,
+  "r1": "result: (x * 2 + 1)",
+  "r2": "bool: (x > 5)",
+  "r3": "list: (List(1, 2, 3))"
+}

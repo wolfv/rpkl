@@ -1,0 +1,9 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+expression: eval_pkl(source)
+---
+{
+  "name": "PKL",
+  "version": 1,
+  "r1": "\n            Hello PKL!\n            Version: 1\n            "
+}

@@ -1,0 +1,8 @@
+---
+source: crates/rpkl-runtime/tests/snapshot_tests.rs
+expression: eval_pkl(source)
+---
+{
+  "r1": "\n            hello\n            world\n            ",
+  "r2": "\n            line 1\n              indented\n            line 3\n            "
+}
